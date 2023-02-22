@@ -6,7 +6,7 @@ import click
 from tools.marker import Marker
 
 
-@click.group(help="国际化工具")
+@click.group(help="Jinx, 一个方便的国际化工具")
 @click.option(
     "-c",
     "--config_path",

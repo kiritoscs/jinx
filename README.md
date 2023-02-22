@@ -1,13 +1,13 @@
-# Django-18n
+# Jinx
 
 ## 用法
 
 ```
-python django-i18n.py --help
+python jinx.py --help
 
-Usage: django-i18n.py [OPTIONS] COMMAND [ARGS]...
+Usage: jinx.py [OPTIONS] COMMAND [ARGS]...
 
-  国际化工具
+  Jinx, 一个方便的国际化工具
 
 Options:
   -c, --config_path PATH  配置文件路径
@@ -19,9 +19,9 @@ Commands:
 
 ### marker, 标记国际化字符串
 ```
-python django-i18n.py marker --help
+python jinx.py marker --help
 
-Usage: django-i18n.py marker [OPTIONS]
+Usage: jinx.py marker [OPTIONS]
 
   标记国际化字符串
 
