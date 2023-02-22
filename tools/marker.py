@@ -48,10 +48,11 @@ class FileMarker(object):
         self._mark_prefixs = []
         # 需要标记的后缀
         self._mark_suffix = ")"
+        # 是否缺少翻译函数
+        self._missing_translate_funcs = True
         # 翻译函数
         self._default_mark_prefix = None
         self._translate_funcs = self._parse_translate_funcs()
-        self._missing_translate_funcs = True
 
     def _build_condition(self, _t: Token) -> Tuple[Condition, Condition]:
         """构建条件"""
@@ -114,7 +115,8 @@ class FileMarker(object):
             if _type == tokenize.STRING:
                 self._extract_token(_token)
 
-    def _mark_translate_func(self, current_line: str, mark_prefix: str, _t: Token, offset: int):
+    @staticmethod
+    def _mark_translate_func(current_line: str, mark_prefix: str, _t: Token, offset: int):
         """匹配单个翻译函数"""
         _func_len = len(mark_prefix)
         _current_prefix_start = _t.start_at.col + offset - _func_len
@@ -149,17 +151,17 @@ class FileMarker(object):
                         break
                 if _is_match:
                     continue
-                _new_line = _current_line[:_t.start_at.col+_line_offset] + real_mark_prefix + _t.token
+                _new_line = _current_line[:_t.start_at.col + _line_offset] + real_mark_prefix + _t.token
                 _new_line += self._mark_suffix
-                _new_line += _current_line[_t.end_at.col+_line_offset:]
+                _new_line += _current_line[_t.end_at.col + _line_offset:]
                 _current_line = _new_line
                 _line_offset += len(real_mark_prefix) + len(self._mark_suffix)
-            if self._lines[_row-1] != _current_line:
-                self._lines[_row-1] = _current_line
+            if self._lines[_row - 1] != _current_line:
+                self._lines[_row - 1] = _current_line
 
     def add_import(self):
         """添加导入语句"""
-        if self._missing_translate_funcs or not self._tokens:
+        if not self._missing_translate_funcs and self._tokens:
             return
         insert_idx = 0
         for _idx, _line in enumerate(self._lines):
@@ -180,8 +182,7 @@ class FileMarker(object):
                     insert_idx = _idx
                     break
         for _translate_func in self._translate_funcs:
-            import_line = _translate_func.import_path + "\n"
-            self._lines.insert(insert_idx, import_line)
+            self._lines.insert(insert_idx, _translate_func.import_path)
 
     def process(self):
         """主逻辑函数, 给py文件中的中文字符串添加国际化函数"""
@@ -203,7 +204,8 @@ class Marker(object):
         return list_files(
             dir_path=self._dir_path,
             exclude_paths=self._config.get(key="exclude_paths", default=[]),
-            exclude_files=self._config.get(key="exclude_files", default=[])
+            exclude_files=self._config.get(key="exclude_files", default=[]),
+            suffix=self._config.get(key="suffix", default=".py"),
         )
 
     def run(self):

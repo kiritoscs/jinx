@@ -1,5 +1,7 @@
 author: kiritoscs
 
+suffix: ".py"
+
 exclude_paths:
   - "migrations"
   - "tests"
