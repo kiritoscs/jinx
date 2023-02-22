@@ -1,0 +1,35 @@
+author: kiritoscs
+
+exclude_paths:
+  - "migrations"
+  - "tests"
+
+exclude_files:
+  - "manage.py"
+  - "settings.py"
+  - "urls.py"
+  - "wsgi.py"
+
+translate_func:
+  default: "ugettext_lazy"
+  alias: "_"
+
+marker:
+  # Marker用到的字符串匹配条件
+  str_conditions:
+    # 单词条件
+    token:
+      contains: []
+      not_contains: []
+      startswith: []
+      not_startswith: []
+      endswith: []
+      not_endswith: ['"""', "'''"]
+    # 原文条件
+    source_line:
+      contains: []
+      not_contains: []
+      startswith: []
+      not_startswith: []
+      endswith: []
+      not_endswith: ['"""', "'''"]
