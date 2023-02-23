@@ -115,8 +115,7 @@ class FileMarker(object):
             if _type == tokenize.STRING:
                 self._extract_token(_token)
 
-    @staticmethod
-    def _mark_translate_func(current_line: str, mark_prefix: str, _t: Token, offset: int):
+    def _mark_translate_func(self, current_line: str, mark_prefix: str, _t: Token, offset: int):
         """匹配单个翻译函数"""
         _func_len = len(mark_prefix)
         _current_prefix_start = _t.start_at.col + offset - _func_len
@@ -124,6 +123,9 @@ class FileMarker(object):
         _current_prefix = current_line[_current_prefix_start:_current_prefix_end]
         # 如果当前行已经存在翻译函数, 则不再添加
         if _current_prefix.strip() == mark_prefix.strip():
+            return True
+        # 考虑到字符串超长导致的代码格式化, 检查上一行是否添加了翻译函数
+        if _current_prefix.strip() in self._lines[_t.start_at.row - 2]:
             return True
         return False
 

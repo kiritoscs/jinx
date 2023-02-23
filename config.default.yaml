@@ -29,8 +29,7 @@ marker:
       not_endswith: ['"""', "'''"]
     # 原文条件
     source_line:
-      contains: []
-      not_contains: []
+      not_contains: ['logger', '__name__']
       startswith: []
       not_startswith: []
       endswith: []
