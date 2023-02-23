@@ -127,7 +127,7 @@ class FileMarker(object):
         if _current_prefix.strip() == mark_prefix.strip():
             return True
         # 考虑到字符串超长导致的代码格式化, 检查上一行是否添加了翻译函数
-        if _current_prefix.strip() in self._lines[_t.start_at.row - 2]:
+        if mark_prefix.strip() in self._lines[_t.start_at.row - 2]:
             return True
         return False
 
