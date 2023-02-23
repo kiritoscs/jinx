@@ -39,6 +39,8 @@ class FileMarker(object):
     def __init__(self, filepath: str, config: Config):
         self._fp = filepath
         self._config = config
+        # 非合法的
+        self._is_legal = False
         self.token_generator = self.generate_tokens()
         # _tokens 中文词列表
         self._tokens = defaultdict(list)
@@ -83,7 +85,7 @@ class FileMarker(object):
     def get_tokens(self) -> defaultdict:
         """对外, 获取标记后的中文词列表"""
         if not self._tokens:
-            self._extract_tokens()
+            self.extract_tokens()
         return self._tokens
 
     def _write_file(self) -> None:
@@ -108,8 +110,8 @@ class FileMarker(object):
         except Exception as e:
             print(f"[ERROR] handler_string, token: {_t._asdict()}, error: {e}")
 
-    def _extract_tokens(self) -> None:
-        """遍历所有token, 提取中文字符串"""
+    def extract_tokens(self) -> None:
+        """第一步, 遍历所有token, 提取中文字符串"""
         for _type, _val, _st, _et, _source in self.token_generator:
             _token = Token(_type, _val, TokenPoint(*_st), TokenPoint(*_et), _source)
             if _type == tokenize.STRING:
@@ -129,13 +131,32 @@ class FileMarker(object):
             return True
         return False
 
-    def mark(self) -> None:
-        """打标记"""
-        # 第一步, 遍历所有token, 提取中文字符串
-        self._extract_tokens()
+    def check(self) -> None:
+        """第二步, 因为国际化函数不支持f-string字符串格式化方法, 所以需要要把不符合的过滤出来提示修改"""
         if not self._tokens:
             return
-        # 第二步, 遍历所有中文字符串, 检查是否标记
+        _del_rows = []
+        for _row in self._tokens.keys():
+            _current_line = self._lines[_row - 1]
+            _legal_tokens = []
+            for _t in self._tokens[_row]:
+                if _current_line[_t.start_at.col] == "f":
+                    print(f"[ERROR] 国际化不支持f-string, {self._fp}:{_row}, line: {_current_line}")
+                    continue
+                _legal_tokens.append(_t)
+            if _legal_tokens:
+                self._tokens[_row] = _legal_tokens
+            else:
+                _del_rows.append(_row)
+        for _row in _del_rows:
+            del self._tokens[_row]
+        if not _del_rows:
+            self._is_legal = True
+
+    def mark(self) -> None:
+        """第三步, 打标记"""
+        if not self._tokens:
+            return
         for _row in self._tokens.keys():
             _current_line = self._lines[_row - 1]
             # 当前因添加翻译函数所增加的列偏移量
@@ -162,7 +183,7 @@ class FileMarker(object):
                 self._lines[_row - 1] = _current_line
 
     def add_import(self):
-        """添加导入语句"""
+        """第四步, 添加导入语句"""
         if not self._missing_translate_funcs and self._tokens:
             return
         insert_idx = 0
@@ -188,6 +209,10 @@ class FileMarker(object):
 
     def process(self):
         """主逻辑函数, 给py文件中的中文字符串添加国际化函数"""
+        self.extract_tokens()
+        self.check()
+        if not self._is_legal and self._config.get(key="force_mode", default=False):
+            return
         self.mark()
         self.add_import()
         self._write_file()
