@@ -1,22 +1,38 @@
-author: kiritoscs
+#####################  全局配置 #####################
 
-suffix: ".py"
+# 语言配置
+language:
+  # 项目语言
+  current: zh-cn
+  # 目标翻译语言
+  target: en
+  # 匹配项目语言的正则表达式
+  re: r"[\u4e00-\u9fa5]+"
 
+# 过滤的目录
 exclude_paths:
+  - "web"
+  - "scripts"
   - "migrations"
   - "tests"
 
+# 过滤的文件
 exclude_files:
   - "manage.py"
-  - "settings.py"
   - "urls.py"
   - "wsgi.py"
+  - "tests.py"
 
-translate_func:
-  default: "ugettext_lazy"
-  alias: "_"
+#####################  以下为模块配置 #####################
 
+# 标记器
 marker:
+  # 严格模式下, 当存在f-string的时候, 不继续标记, 默认关闭
+  strict_mode: true
+  # 翻译函数
+  translate_func:
+    default: "ugettext_lazy"
+    alias: "_"
   # Marker用到的字符串匹配条件
   str_conditions:
     # 单词条件

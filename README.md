@@ -26,7 +26,6 @@ Usage: jinx.py marker [OPTIONS]
   标记国际化字符串
 
 Options:
-  -d, --dir_path PATH         要标记的目录  [required]
-  -m, --multi_thread BOOLEAN  是否开启多线程
+  -d, --target_path PATH      要标记的目录  [required]
   --help                      Show this message and exit.
 ```

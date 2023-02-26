@@ -1,27 +1,36 @@
+"""
+This file contains utility functions for the project.
+"""
 import os
+import typing
 
-# 默认编码
-DEFAULT_ENCODING = "utf-8"
+from utils.constants import DEFAULT_ENCODING, FILE_SUFFIX
 
 
-def is_sub_string(s: str, sub_string_list: list) -> bool:
-    """判断路径是否匹配"""
+def array_chunk(data: list[typing.Any], size=100):
+    return [data[i:i + size] for i in range(0, len(data), size)]
+
+
+def is_sub_string(s: str, sub_string_list: list[typing.Any]) -> bool:
+    """
+    遍历字符串列表，判断字符串是否包含其中的字符串
+    """
     for _s in sub_string_list:
         if _s in s:
             return True
     return False
 
 
-def list_files(dir_path: str, exclude_paths: list = None, exclude_files: list = None, suffix: str = "py") -> list:
+def list_files(target_path: str, exclude_paths: list = None, exclude_files: list = None) -> list[str]:
     """获取指定路径下所有后缀为suffix的文件"""
-    if not os.path.isdir(dir_path):
-        return [dir_path]
+    if not os.path.isdir(target_path):
+        return [target_path]
     files = []
-    for root, __, file_names in os.walk(dir_path):
+    for root, __, file_names in os.walk(target_path):
         if exclude_paths and is_sub_string(root, exclude_paths):
             continue
         for file_name in file_names:
-            if not file_name.endswith(suffix):
+            if not file_name.endswith(FILE_SUFFIX):
                 continue
             if exclude_files and is_sub_string(file_name, exclude_files):
                 continue

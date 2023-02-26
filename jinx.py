@@ -3,7 +3,7 @@ import sys
 
 import click
 
-from tools.marker import Marker
+from tools.marker import MarkerTool
 
 
 @click.group(help="Jinx, 一个方便的国际化工具")
@@ -23,10 +23,11 @@ def cli(ctx, config_path):
 
 @cli.command(help="标记国际化字符串")
 @click.pass_context
-@click.option("--dir_path", "-d", type=click.Path(exists=True), required=True, help="要标记的目录")
-@click.option("--multi_thread", "-m", type=bool, required=False, help="是否开启多线程", default=False)
-def marker(ctx, dir_path, multi_thread):
-    Marker(dir_path=dir_path, config_path=ctx.obj["config_path"], multi_thread=multi_thread).run()
+@click.option("--target_path", "-d", type=click.Path(exists=True), required=True, help="要标记的目录")
+# @click.option("--multi_thread", "-m", type=bool, required=False, help="是否开启多线程", default=False)
+# def marker(ctx, target_path, multi_thread):
+def marker(ctx, target_path):
+    MarkerTool(target_path=target_path, config_path=ctx.obj["config_path"]).run()
 
 
 if __name__ == '__main__':
