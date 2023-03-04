@@ -1,0 +1,75 @@
+################################################## 项目全局配置文件 ##################################################
+[language]
+# 语言配置
+## 当前语言
+current = "zh-CN"
+## 目标语言
+dest = "en"
+
+[filter]
+# 过滤器, 不想翻译的文件或者目录
+## 过滤目录
+exclude_paths = [
+    "web",
+    "scripts",
+    "migrations",
+    "tests"
+]
+## 过滤文件
+exclude_files = [
+    "manage.py",
+    "urls.py",
+    "wsgi.py",
+    "tests.py"
+]
+
+################################################## 项目模块配置文件 ##################################################
+[marker]
+# 标记器
+## 严格模式, 存在f-string格式化的需要国际化的字符串时, 会跳过该文件的标记
+strict_mode = true
+
+[marker.translate_func]
+# 默认的翻译函数配置
+## 默认的翻译函数
+default = "ugettext_lazy"
+## 翻译函数别名
+alias = "_"
+
+[marker.str_conditions]
+# 字符串条件配置
+
+[marker.str_conditions.token]
+# token(单词)的字符串条件配置
+## 包含
+contains = []
+## 不包含
+not_contains = []
+## 以...开头
+startswith = []
+## 不以...开头
+not_startswith = []
+## 以...结尾
+endswith = []
+## 不以...结尾
+not_endswith = ["\"\"\"", "'''"]
+
+[marker.str_conditions.source_line]
+# source_line(源码)的字符串条件配置
+## 包含
+contains = []
+## 不包含
+not_contains = ["logger", "__name__"]
+## 以...开头
+startswith = []
+## 不以...开头
+not_startswith = []
+## 以...结尾
+endswith = []
+## 不以...结尾
+not_endswith = ["\"\"\"", "'''"]
+
+
+[translator]
+# 翻译器
+provider = "GoogleAPI"

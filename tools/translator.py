@@ -1,66 +1,25 @@
-import googletrans
+import json
 
-from utils.utils import array_chunk
-from utils.config import Config
+from dataclasses import dataclass
 
-
-# 默认目标语言
-DEFAULT_DEST = "en"
-# 最大同时请求语句数
-MAX_CONCURRENT_REQUEST = 10
+from utils import config
+from utils.utils import read_file
+from utils.translator import Translator, TranslatorProviderEnum
 
 
-class TranslateProviderEnum:
-    GOOGLE = "google"
-
-
-class TranslatorBase:
-    """翻译基类"""
-    def __init__(self, provider: str, config: Config, contents: list[str], official_dict: dict[str, str]):
-        self._provider = provider
-        self._contents = contents
-        self._official_dict = official_dict
-        self._config = {}
-        self.init_config(config)
-        # 翻译结果
-        self._result = dict.fromkeys(self._contents, "")
-
-    # 保持输入顺序输出翻译结果
-    def get_result(self):
-        return [
-            self._result.get(_content, _content)
-            for _content in self._contents
-        ]
-
-    # 初始化配置
-    def init_config(self, config: Config):
-        raise NotImplementedError
-
-    def translate(self):
-        raise NotImplementedError
-
-
-class GoogleTranslator(TranslatorBase):
-    """谷歌翻译"""
-    def __init__(self, config: Config, contents: list[str], official_dict: dict[str, str]):
-        super(TranslatorBase).__init__(
-            provider=TranslateProviderEnum.GOOGLE,
-            config=config,
-            contents=contents,
-            official_dict=official_dict
-        )
-
-    def init_config(self, config: Config):
-        self._config = {
-            "dest": config.get("translator" "dest", default=DEFAULT_DEST),
-        }
-
-    def translate(self):
-        translator = googletrans.Translator()
-        for _slice_contents in array_chunk(self._contents, MAX_CONCURRENT_REQUEST):
-            _result = translator.translate(
-                _slice_contents,
-                dest=self._config.get("dest", DEFAULT_DEST)
-            )
-            for _r in _result:
-                self._result[_r.origin] = _r.text
+class TranslateTool:
+    """
+    翻译工具
+    :param locate_path: locate目录(存放各个语言的po, mo文件)
+    :param official_dict_path: 官方词典路径
+    """
+    def __init__(self, locate_path: str = None, official_dict_path: str = None):
+        self._locate_path = locate_path
+        if not official_dict_path:
+            self._official_dict = {}
+        else:
+            try:
+                self._official_dict = json.load(read_file(official_dict_path))
+            except Exception as e:
+                raise ValueError(f"官方词典文件{official_dict_path}格式错误: {e}")
+        self._translate_class = Translator(provider=config.translator.provider).get_instance()
