@@ -1,31 +1,13 @@
 # Jinx
 
-## 用法
+## 什么是Jinx
+<hr>
 
-```
-python jinx.py --help
+Jinx是一个Django项目国际化的一站式辅助工具
 
-Usage: jinx.py [OPTIONS] COMMAND [ARGS]...
+包含了`检查翻译标记`, `检查标记语法`, `词条提取`, `词条翻译`等一个Django项目国际化所需要做的所有事情
 
-  Jinx, 一个方便的国际化工具
-
-Options:
-  -c, --config_path PATH  配置文件路径
-  --help                  Show this message and exit.
-
-Commands:
-  marker  标记国际化字符串
-```
-
-### marker, 标记国际化字符串
-```
-python jinx.py marker --help
-
-Usage: jinx.py marker [OPTIONS]
-
-  标记国际化字符串
-
-Options:
-  -d, --target_path PATH      要标记的目录  [required]
-  --help                      Show this message and exit.
-```
+其中
+- [Marker](marker/README.md)负责 `检查翻译标记`, `检查标记语法`
+- `词条提取`, 利用Django自带的makemessages命令进行词条提取
+- [Translator](translator/README.md)负责 `词条翻译`

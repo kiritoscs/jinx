@@ -3,5 +3,7 @@
 .idea
 
 # 配置文件
-config.yaml
-pyproject.toml
+jinx.toml
+
+# mypy检查生成的cache
+.mypy_cache

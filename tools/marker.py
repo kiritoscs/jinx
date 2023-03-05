@@ -1,20 +1,17 @@
 import os
 import re
 import tokenize
-
-from io import StringIO
-from dataclasses import dataclass, asdict
+import typing
 from collections import defaultdict
+from dataclasses import asdict, dataclass
+from io import StringIO
 from typing import Generator
 
 from rich.progress import track
 
-from utils import config
-from utils.utils import read_file, write_file, list_files
-from utils.constants import (
-    DJANGO_TRANSLATE_FUNC_IMPORT_PATH_PREFIX
-)
-
+from common import config
+from common.constants import DJANGO_TRANSLATE_FUNC_IMPORT_PATH_PREFIX
+from common.utils import list_files, read_file, write_file
 
 LANGUAGE_RE_PATTERN = re.compile(config.language.re)
 
@@ -25,27 +22,30 @@ class TokenPoint:
     :param row: 行号
     :param col: 列号
     """
-    row: int = None
-    col: int = None
+
+    row: int
+    col: int
 
 
 @dataclass
 class Token:
     """Token"""
-    type: str = None
-    token: str = None
-    start_at: TokenPoint = None
-    end_at: TokenPoint = None
-    source_line: str = None
+
+    start_at: TokenPoint
+    end_at: TokenPoint
+    type: int
+    token: str = ""
+    source_line: str = ""
 
 
 class DjangoTranslateFunc:
     """Django翻译函数"""
+
     def __init__(
-            self,
-            import_path: str = None,
-            func_name: str = config.marker.translate_func.default,
-            alias_name: str = config.marker.translate_func.alias
+        self,
+        import_path: str = "",
+        func_name: str = config.marker.translate_func.default,
+        alias_name: str = config.marker.translate_func.alias,
     ):
         self.import_path = import_path
         self.func_name = func_name
@@ -65,8 +65,9 @@ class DjangoTranslateFunc:
 
 
 @dataclass
-class StrCondition(object):
+class StrCondition:
     """字符串匹配条件"""
+
     token: Token
     str_conditions = config.marker.str_conditions
 
@@ -151,16 +152,17 @@ class StrCondition(object):
         return True
 
 
-class DjangoTranslateFuncParser(object):
+class DjangoTranslateFuncParser:
     """
     解析django翻译函数
     :param contents: 文件内容列表
     """
+
     def __init__(self, contents: list = None):
         # contents 文件内容列表
         self._contents = contents or []
         # 根层级配置
-        self._translate_funcs = []
+        self._translate_funcs: list[DjangoTranslateFunc] = []
 
     def _parse_line(self, line: str):
         # 去除注释
@@ -173,9 +175,7 @@ class DjangoTranslateFuncParser(object):
             return
         if "," in line:
             for _f in line.split(","):
-                self._translate_funcs.append(
-                    DjangoTranslateFunc(import_path=_origin_line, alias_name=_f.strip())
-                )
+                self._translate_funcs.append(DjangoTranslateFunc(import_path=_origin_line, alias_name=_f.strip()))
             return
         self._translate_funcs.append(DjangoTranslateFunc(import_path=_origin_line, alias_name=line))
 
@@ -192,7 +192,8 @@ class DjangoTranslateFuncParser(object):
     @property
     def default(self):
         return DjangoTranslateFunc(
-            func_name=config.marker.translate_func.default, alias_name=config.marker.translate_func.alias
+            func_name=config.marker.translate_func.default,
+            alias_name=config.marker.translate_func.alias,
         )
 
 
@@ -202,14 +203,15 @@ class FileMarker:
     单文件, 给py文件中的中文字符串添加国际化函数
     :param filepath: 文件路径
     """
+
     def __init__(self, filepath: str):
         self._fp = filepath
         # _tokens 中文词列表
-        self._tokens = defaultdict(list)
+        self._tokens: typing.Dict[typing.Any, list] = defaultdict(list)
         # 所有行
         self._lines = read_file(filepath).split("\n")
         # 非合法的行
-        self._illegal_tokens = []
+        self._illegal_tokens: typing.List[Token] = []
         # 默认翻译函数
         self._default_translate_func = DjangoTranslateFuncParser(contents=self._lines).default
         # 是否需要插入import语句
@@ -253,7 +255,9 @@ class FileMarker:
         遍历所有token, 提取中文字符串
         """
         for _type, _val, _st, _et, _source in self.token_generator:
-            _token = Token(_type, _val, TokenPoint(*_st), TokenPoint(*_et), _source)
+            _token = Token(
+                type=_type, token=_val, start_at=TokenPoint(*_st), end_at=TokenPoint(*_et), source_line=_source
+            )
             if _type == tokenize.STRING:
                 self._extract_token(_token)
 
@@ -268,7 +272,13 @@ class FileMarker:
 
         return tokens
 
-    def _match_translate_func(self, current_line: str, translate_func: DjangoTranslateFunc, t: Token, offset: int):
+    def _match_translate_func(
+        self,
+        current_line: str,
+        translate_func: DjangoTranslateFunc,
+        t: Token,
+        offset: int,
+    ):
         """匹配单个翻译函数"""
         _func_len = len(translate_func.prefix)
         _current_prefix_start = t.start_at.col + offset - _func_len
@@ -327,7 +337,10 @@ class FileMarker:
                 _is_match = False
                 for _translate_func in self._translate_funcs:
                     _is_match = self._match_translate_func(
-                        current_line=_current_line, translate_func=_translate_func, t=_t, offset=_line_offset
+                        current_line=_current_line,
+                        translate_func=_translate_func,
+                        t=_t,
+                        offset=_line_offset,
                     )
                     if _is_match:
                         real_mark_prefix = _translate_func.prefix
@@ -335,9 +348,9 @@ class FileMarker:
                         break
                 if _is_match:
                     continue
-                _new_line = _current_line[:_t.start_at.col + _line_offset] + real_mark_prefix + _t.token
+                _new_line = _current_line[: _t.start_at.col + _line_offset] + real_mark_prefix + _t.token
                 _new_line += real_mark_suffix
-                _new_line += _current_line[_t.end_at.col + _line_offset:]
+                _new_line += _current_line[_t.end_at.col + _line_offset :]
                 _current_line = _new_line
                 _line_offset += len(real_mark_prefix) + len(real_mark_suffix)
             if self._lines[_row - 1] != _current_line:
@@ -354,10 +367,10 @@ class FileMarker:
         for _idx, _line in enumerate(self._lines):
             try:
                 if (
-                        (_line.startswith("import") or _line.startswith("from"))
-                        and _idx < len(self._lines) - 1
-                        # 空行可能为"", "\n"
-                        and self._lines[_idx + 1] in ["", os.linesep]
+                    (_line.startswith("import") or _line.startswith("from"))
+                    and _idx < len(self._lines) - 1
+                    # 空行可能为"", "\n"
+                    and self._lines[_idx + 1] in ["", os.linesep]
                 ):
                     insert_idx = _idx + 1
                     break
@@ -401,7 +414,7 @@ class FileMarker:
 class MarkerTool:
     def __init__(self, target_path: str = None):
         self._target_path = target_path
-        self._tokens = []
+        self._tokens: typing.List[Token] = []
 
     @property
     def files(self):
@@ -409,7 +422,7 @@ class MarkerTool:
         return list_files(
             target_path=self._target_path,
             exclude_paths=config.file_filter.exclude_paths,
-            exclude_files=config.file_filter.exclude_files
+            exclude_files=config.file_filter.exclude_files,
         )
 
     @property

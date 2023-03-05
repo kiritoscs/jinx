@@ -4,7 +4,7 @@ import sys
 import click
 
 from tools.marker import MarkerTool
-from tools.translator import TranslateTool
+from translator import TranslatorTool
 
 
 @click.group(help="Jinx, 一个方便的国际化工具")
@@ -14,7 +14,7 @@ from tools.translator import TranslateTool
     type=click.Path(exists=True),
     required=False,
     help="配置文件路径",
-    default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "pyproject.toml")
+    default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "jinx.toml"),
 )
 @click.pass_context
 def cli(ctx, config_path):
@@ -32,11 +32,13 @@ def marker(ctx, target_path):
 
 @cli.command(help="翻译需要国际化的词条")
 @click.pass_context
-def translate(ctx):
-    TranslateTool().handle()
+@click.option("--locale_path", "-p", type=click.Path(exists=True), required=True, help="需要翻译的locale目录或者django.po路径")
+@click.option("--official_dict_path", "-o", type=click.Path(exists=True), required=False, help="官方词典路径, JSON文件")
+def translator(ctx, locale_path, official_dict_path):
+    TranslatorTool(locale_path=locale_path, official_dict_path=official_dict_path).handle()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     os.environ.setdefault("BASE_DIR", BASE_DIR)
     sys.path.append(BASE_DIR)
