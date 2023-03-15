@@ -18,9 +18,9 @@ Django国际化常常包含以下流程
 1. [检查翻译标记](#1.检查翻译标记)由[Marker](marker/README.md)负责
 2. [提取词条](#2.提取词条) 由Django自带makemessages命令进行词条提取
 3. [机器翻译词条](#3.机器翻译词条) 由[Translator](translator/README.md)负责
-4. `人工检验词条` 由[Extractor](extractor/README.md)导出json文件, 交付给负责人
-5. `将确认无误的词条写入po文件` 由[Translator](translator/README.md)负责
-6. `编译` 由Django自带compilemessages命令进行编译
+4. [人工检验词条](#4.人工检验词条) 由[Extractor](extractor/README.md)导出json文件, 交付给负责人
+5. [将确认无误的词条写入po文件](#5.将确认无误的词条写入po文件) 由[Translator](translator/README.md)负责
+6. [编译](#6.编译) 由Django自带compilemessages命令进行编译
 
 
 ## 快速开始
