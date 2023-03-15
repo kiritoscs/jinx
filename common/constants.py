@@ -19,8 +19,8 @@ FILE_SUFFIX = ".py"
 DEFAULT_ENCODING = "utf-8"
 
 # Django 导入语句前缀
-DJANGO_TRANSLATE_FUNC_IMPORT_PATH_PREFIX = "from django.common.translation import "
-DEFAULT_TRANSLATE_FUNC_ALIAS = "_"
+DJANGO_TRANSLATE_FUNC_IMPORT_PATH_PREFIX = "from django.utils.translation import "
+DEFAULT_TRANSLATION_FUNC_ALIAS = "_"
 
 
 class EnhanceEnum:
@@ -54,7 +54,7 @@ class EnhanceEnum:
         Prompt.panic("Unsupported {name}: {member}", name=cls.NAME, member=member)
 
 
-class DjangoTranslateFuncEnum(EnhanceEnum):
+class DjangoTranslationFuncEnum(EnhanceEnum):
     """Django翻译函数枚举"""
 
     NAME = "Django translate function enum"

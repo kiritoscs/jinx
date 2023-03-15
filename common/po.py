@@ -3,9 +3,9 @@ import shutil
 import arrow
 import polib
 
-from common import Prompt
 from common.constants import PoFileModeEnum
 from common.path import check_exist
+from common.prompt import Prompt
 
 
 class PoUtil:

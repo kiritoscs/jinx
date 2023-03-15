@@ -5,18 +5,11 @@ from dataclasses import dataclass
 import tomllib
 
 from common import Prompt
-from common.constants import (
-    DEFAULT_TRANSLATE_FUNC_ALIAS,
-    DjangoTranslateFuncEnum,
-    LanguageEnum,
-    LanguageRegexEnum,
-)
+from common.constants import LanguageEnum, LanguageRegexEnum
 
 """
 以下是全局配置
 LanguageConfig
-DjangoTranslateFuncConfig
-FileFilterConfig
 """
 
 
@@ -31,6 +24,9 @@ class LanguageConfig:
     def __post_init__(self):
         LanguageEnum.check_member(self.current)
         LanguageEnum.check_member(self.dest)
+        if self.re:
+            # 如果用户自定义了正则表达式, 则不再检查
+            return
         if self.current not in LanguageRegexEnum:
             msg = (
                 "Built-in RE missing current language: {current}, "
@@ -38,57 +34,6 @@ class LanguageConfig:
             )
             Prompt.panic(msg=msg, current=self.current)
         self.re = LanguageRegexEnum[self.current]
-
-
-@dataclass
-class DjangoTranslateFuncConfig:
-    """Django默认翻译函数配置"""
-
-    default: str = DjangoTranslateFuncEnum.ugettext_lazy
-    alias: str = DEFAULT_TRANSLATE_FUNC_ALIAS
-
-
-@dataclass
-class FileFilterConfig:
-    """文件过滤配置"""
-
-    exclude_paths: list[str]
-    exclude_files: list[str]
-
-
-"""
-以下是各个模块配置
-MarkerConfig
-"""
-
-
-@dataclass
-class StrConditionConfig:
-    """字符串匹配条件配置"""
-
-    contains: list[str]
-    not_contains: list[str]
-    startswith: list[str]
-    not_startswith: list[str]
-    endswith: list[str]
-    not_endswith: list[str]
-
-
-@dataclass
-class StrConditions:
-    """字符串匹配条件"""
-
-    # 原文
-    source_line: StrConditionConfig
-    # 单词
-    token: StrConditionConfig
-
-
-@dataclass
-class MarkerConfig:
-    str_conditions: StrConditions
-    translate_func: DjangoTranslateFuncConfig
-    strict_mode: bool = True
 
 
 """
@@ -104,8 +49,6 @@ class Config:
     """
 
     language: LanguageConfig
-    file_filter: FileFilterConfig
-    marker: MarkerConfig
 
 
 class ConfigUtil:
@@ -146,25 +89,6 @@ language = LanguageConfig(
     current=config_util.get("language.current", LanguageEnum.Chinese),
     dest=config_util.get("language.target", LanguageEnum.English),
 )
-file_filter = FileFilterConfig(
-    exclude_paths=config_util.get("filter.exclude_paths", []),
-    exclude_files=config_util.get("filter.exclude_files", []),
-)
-marker = MarkerConfig(
-    strict_mode=config_util.get("marker.strict_mode", False),
-    translate_func=DjangoTranslateFuncConfig(
-        default=config_util.get(
-            "marker.translate_func.default",
-            DjangoTranslateFuncEnum.ugettext_lazy,
-        ),
-        alias=config_util.get("marker.translate_func.alias", DEFAULT_TRANSLATE_FUNC_ALIAS),
-    ),
-    str_conditions=StrConditions(
-        source_line=StrConditionConfig(**config_util.get("marker.str_conditions.source_line", {})),
-        token=StrConditionConfig(**config_util.get("marker.str_conditions.token", {})),
-    ),
-)
-
 
 # 只允许其他模块导入__all__中的变量
-__all__ = ["language", "file_filter", "marker", "config_util"]
+__all__ = ["language", "config_util"]
