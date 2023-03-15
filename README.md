@@ -3,12 +3,24 @@
 ## 什么是Jinx
 Jinx是一个Django项目国际化的一站式辅助工具
 
-包含了`检查翻译标记`, `检查标记语法`, `词条提取`, `词条翻译`等一个Django项目国际化所需要做的所有事情
+Django国际化常常包含以下流程
+1. 检查翻译标记
+2. 提取词条
+3. 机器翻译词条
+4. 人工检验词条(将机器翻译好的词条导出交付给相应的人员进行校对)
+5. 将确认无误的词条写入po文件
+6. 编译
 
-其中
-- [Marker](marker/README.md)负责 `检查翻译标记`, `检查标记语法`
-- `词条提取`, 利用Django自带的makemessages命令进行词条提取
-- [Translator](translator/README.md)负责 `词条翻译`
+可以看到国际化不是一蹴而就的, 而且每个项目的国际化流程都不尽相同
+
+那么jinx可以帮助你完成以下工作
+
+1. [检查翻译标记](#1.检查翻译标记)由[Marker](marker/README.md)负责
+2. [提取词条](#2.提取词条) 由Django自带makemessages命令进行词条提取
+3. [机器翻译词条](#3.机器翻译词条) 由[Translator](translator/README.md)负责
+4. `人工检验词条` 由[Extractor](extractor/README.md)导出json文件, 交付给负责人
+5. `将确认无误的词条写入po文件` 由[Translator](translator/README.md)负责
+6. `编译` 由Django自带compilemessages命令进行编译
 
 
 ## 快速开始
@@ -18,9 +30,7 @@ Jinx是一个Django项目国际化的一站式辅助工具
 
 ```bash
 git clone https://github.com/kiritoscs/jinx
-
 cd jinx
-
 poetry install
 ```
 
@@ -33,7 +43,7 @@ poetry install
 mv jinx.template.toml jinx.toml
 ```
 
-### 标记
+### 1.检查翻译标记
 
 ```bash
 python jinx.py marker -d ${YOUR_DJANGO_PROJECT_DIR}
@@ -42,8 +52,18 @@ python jinx.py marker -d ${YOUR_DJANGO_PROJECT_DIR}
 
 详细配置参考[配置说明](#配置说明)
 
-### 翻译
+标记之后, 需要检查一下标记是否正确, 有时候会出现标记错误的情况, 具体参考[Marker](marker/README.md)
 
+### 2.提取词条
+```bash
+python manage.py makemessages -l ${YOUR_LANGUAGE}
+```
+或者
+```bash
+djano-admin makemessages -l ${YOUR_LANGUAGE}
+```
+
+### 3.机器翻译词条
 ```bash
 python jinx.py translator -p ${YOUR_PO_FILE} -o {YOUR_OFFICIAL_DICT_DIR}
 ```
@@ -57,6 +77,31 @@ python jinx.py translator -p ${YOUR_PO_FILE} -o {YOUR_OFFICIAL_DICT_DIR}
 - google_api, 暂时通过爬虫的形式使用, 速度较慢
 
 详细配置参考[配置说明](#配置说明)
+
+### 4.人工检验词条
+导出词条
+```bash
+python jinx.py extractor -p ${YOUR_PO_FILE} -o ${YOUR_OUTPUT_DIR}
+```
+- YOUR_PO_FILE: 你的po文件目录, 也支持填入locale目录, 会自动寻找locale目录下的对应语言po文件
+- YOUR_OUTPUT_DIR: 你的输出文件名, 暂时支持json, 默认为contents.json
+
+### 5.将确认无误的词条写入po文件
+```bash
+python jinx.py translator -p ${YOUR_PO_FILE} -o ${YOUR_FINAL_JSON_FILE}
+```
+- YOUR_PO_FILE: 你的po文件目录, 也支持填入locale目录, 会自动寻找locale目录下的对应语言po文件
+- YOUR_FINAL_JSON_FILE: 你的最终json文件, 用于更新po文件
+
+### 6.编译
+```bash
+python manage.py compilemessages
+```
+或者
+```bash
+djano-admin compilemessages
+```
+
 
 ### 配置说明
 
@@ -95,9 +140,6 @@ exclude_files = [
 default = "ugettext_lazy"
 ## 翻译函数别名
 alias = "_"
-
-[marker.str_conditions]
-# 字符串条件配置
 
 [marker.str_conditions.token]
 # token(单词)的字符串条件配置

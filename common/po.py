@@ -1,3 +1,4 @@
+import json
 import shutil
 
 import arrow
@@ -61,6 +62,11 @@ class PoUtil:
                     continue
                 entry.msgstr = data[entry.msgid]
                 self._po.save()
+
+    def export(self, export_path: str):
+        with open(export_path, "w", encoding="utf-8") as f:
+            json.dump(self.po_content_dict, f, ensure_ascii=False, indent=4)
+            f.close()
 
 
 __all__ = ["PoUtil"]

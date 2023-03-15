@@ -7,3 +7,4 @@ jinx.toml
 
 # mypy检查生成的cache
 .mypy_cache
+.codecc

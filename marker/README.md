@@ -29,18 +29,6 @@ re模块提供了正则表达式的功能, 用于匹配指定语言的字符串
 
 通过tokenize模块, 我们可以获取到源代码中的字符串, 然后根据配置文件中的条件进行判断, 如果满足条件, 则将字符串添加上标记
 
-## 快速开始
-<hr>
-
-`python jinx.py -c <config_path> marker -d <target_path>`
-
-config_path: 配置文件路径, 默认为jinx/jinx.toml
-
-target_path: 标记的根目录, 也支持单个文件
-
-例如: `python jinx.py marker -d ${project_path}`
-
-
 ## 配置说明
 <hr>
 
@@ -68,3 +56,7 @@ target_path: 标记的根目录, 也支持单个文件
 - not_endswith: 判断字符串是否不以某个字符串结尾
 - contains: 判断字符串是否包含某个字符串
 - not_contains: 判断字符串是否不包含某个字符串
+
+## 暂时可能标记错误的场景
+- f-string格式化的字符串, 暂时通过提示的方式进行处理, 需要手动处理
+- 过长的字符串, 或者多行字符串, 暂未能处理

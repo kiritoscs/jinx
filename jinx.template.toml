@@ -38,9 +38,6 @@ default = "ugettext_lazy"
 ## 翻译函数别名
 alias = "_"
 
-[marker.str_conditions]
-# 字符串条件配置
-
 [marker.str_conditions.token]
 # token(单词)的字符串条件配置
 ## 包含
