@@ -68,7 +68,7 @@ djano-admin makemessages -l ${YOUR_LANGUAGE}
 python jinx.py translator -p ${YOUR_PO_FILE} -o {YOUR_OFFICIAL_DICT_DIR}
 ```
 - YOUR_PO_FILE: 你的po文件目录, 也支持填入locale目录, 会自动寻找locale目录下的对应语言po文件
-- YOUR_OFFICIAL_DICT_DIR: 你的官方词典目录, 用于翻译时的参考, 最大匹配翻译
+- YOUR_OFFICIAL_DICT_DIR: 你的官方词典目录, JSON格式, 用于翻译时的参考, 最大匹配翻译, 参考[官方词典official_dict](official_dict.template.json)
 
 默认白嫖使用GoogleAPI翻译, 略慢
 
@@ -81,7 +81,7 @@ python jinx.py translator -p ${YOUR_PO_FILE} -o {YOUR_OFFICIAL_DICT_DIR}
 ### 4.人工检验词条
 导出词条
 ```bash
-python jinx.py extractor -p ${YOUR_PO_FILE} -o ${YOUR_OUTPUT_DIR}
+python jinx.py extractor -p ${YOUR_PO_FILE} -e ${YOUR_OUTPUT_DIR}
 ```
 - YOUR_PO_FILE: 你的po文件目录, 也支持填入locale目录, 会自动寻找locale目录下的对应语言po文件
 - YOUR_OUTPUT_DIR: 你的输出文件名, 暂时支持json, 默认为contents.json

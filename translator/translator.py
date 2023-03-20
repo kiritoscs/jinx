@@ -54,6 +54,9 @@ class TranslatorTool:
 
     def _init_official_dict(self):
         """初始化官方词典"""
+        if not self.official_dict_path:
+            self.official_dict = {}
+            return
         try:
             self.official_dict = read_file(fp=self.official_dict_path, is_json=True)
         except Exception as e:
