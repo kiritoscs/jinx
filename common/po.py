@@ -64,9 +64,13 @@ class PoUtil:
                 self._po.save()
 
     def export(self, export_path: str):
-        with open(export_path, "w", encoding="utf-8") as f:
-            json.dump(self.po_content_dict, f, ensure_ascii=False, indent=4)
-            f.close()
+        try:
+            with open(export_path, "w", encoding="utf-8") as f:
+                json.dump(self.po_content_dict, f, ensure_ascii=False, indent=4)
+                f.close()
+            Prompt.info("Exported to {export_path}", export_path=export_path)
+        except Exception as e:
+            Prompt.panic("Failed to export: {e}", e=e)
 
 
 __all__ = ["PoUtil"]
