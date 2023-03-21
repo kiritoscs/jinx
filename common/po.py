@@ -56,7 +56,18 @@ class PoUtil:
             self._po.save()
             return
         elif mode == PoFileModeEnum.APPEND:
+            # APPEND模式用在提取项目国际化词条, 写入po, 以便翻译
             # 如果是APPEND, 更新所有msgid匹配的数据, 并新增msgid不存在的数据
+            new_data = {}
+            for key, value in data.items():
+                if key.startswith("u"):
+                    key = key.lstrip("u")
+                if key.startswith('"'):
+                    key = key.lstrip('"')
+                if key.endswith('"'):
+                    key = key.rstrip('"')
+                new_data[key] = value
+            data = new_data
             for entry in self._po:
                 if entry.msgid not in data or not data[entry.msgid]:
                     continue
