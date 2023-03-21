@@ -16,7 +16,7 @@ Django国际化常常包含以下流程
 那么jinx可以帮助你完成以下工作
 
 1. [检查翻译标记](#1检查翻译标记)由[Marker](marker/README.md)负责
-2. [提取词条](#2提取词条) 由Django自带makemessages命令进行词条提取
+2. [提取词条](#2提取词条) 由[Extractor](extractor/README.md)负责, 或者 利用Django自带makemessages命令进行词条提取
 3. [机器翻译词条](#3机器翻译词条) 由[Translator](translator/README.md)负责
 4. [人工检验词条](#4人工检验词条) 由[Exporter](exporter/README.md)导出json文件, 交付给负责人
 5. [将确认无误的词条写入po文件](#5将确认无误的词条写入po文件) 由[Translator](translator/README.md)负责
@@ -55,6 +55,15 @@ python jinx.py marker -d ${YOUR_DJANGO_PROJECT_DIR}
 标记之后, 需要检查一下标记是否正确, 有时候会出现标记错误的情况, 具体参考[Marker](marker/README.md)
 
 ### 2.提取词条
+**PlanA**: 利用extractor提取词条, 本质是基于marker的结果进行提取, 所以需要先检查标记结果
+```bash
+python jinx.py extractor -t ${YOUR_DJANGO_PROJECT_DIR} -l ${YOUR_PO_FILE}
+```
+- YOUR_DJANGO_PROJECT_DIR: 你的Django项目目录
+- YOUR_PO_FILE: 你的po文件目录, 也支持填入locale目录, 会自动寻找locale目录下的对应语言po文件
+
+
+**PlanB**: Django自带的makemessages命令(推荐)
 ```bash
 python manage.py makemessages -l ${YOUR_LANGUAGE}
 ```

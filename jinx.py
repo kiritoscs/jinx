@@ -4,6 +4,7 @@ import sys
 import click
 
 from exporter import ExportTool
+from extractor import ExtractTool
 from marker import MarkerTool
 from translator import TranslatorTool
 
@@ -40,6 +41,13 @@ def marker(target_path):
 # def translator(ctx, locale_path, official_dict_path):
 def translator(locale_path, official_dict_path):
     TranslatorTool(locale_path=locale_path, official_dict_path=official_dict_path).handle()
+
+
+@cli.command(help="提取项目中的国际化字符串到po文件中")
+@click.option("--target_path", "-t", type=click.Path(exists=True), required=True, help="要提取的目录")
+@click.option("--locale_path", "-l", type=click.Path(exists=True), required=True, help="需要写入的locale目录或者django.po路径")
+def extractor(target_path, locale_path):
+    ExtractTool(target_path=target_path, locale_path=locale_path).handle()
 
 
 @cli.command(help="从po文件中导出词条")

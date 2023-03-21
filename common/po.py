@@ -55,6 +55,17 @@ class PoUtil:
                 entry.msgstr = data[entry.msgid]
             self._po.save()
             return
+        elif mode == PoFileModeEnum.APPEND:
+            # 如果是APPEND, 更新所有msgid匹配的数据, 并新增msgid不存在的数据
+            for entry in self._po:
+                if entry.msgid not in data or not data[entry.msgid]:
+                    continue
+                entry.msgstr = data[entry.msgid]
+            for msgid, msgstr in data.items():
+                if msgid not in self.msgid_list:
+                    self._po.append(polib.POEntry(msgid=msgid, msgstr=msgstr))
+            self._po.save()
+            return
         else:
             # 如果是UPDATE, 更新现有msgstr为空的数据
             for entry in self._po:

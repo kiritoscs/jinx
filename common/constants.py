@@ -164,6 +164,8 @@ class PoFileModeEnum(EnhanceEnum):
     OVERWRITE = "overwrite"
     # 更新写入
     UPDATE = "update"
+    # 追加写入
+    APPEND = "append"
 
 
 # 最大同时请求语句数
