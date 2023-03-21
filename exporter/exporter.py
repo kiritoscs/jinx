@@ -4,7 +4,7 @@ from common.config import language
 from common.po import PoUtil
 
 
-class ExtractorTool:
+class ExportTool:
     """
     提取工具
     :param locale_path: Django locale目录, 也可以是po文件路径

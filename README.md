@@ -18,7 +18,7 @@ Django国际化常常包含以下流程
 1. [检查翻译标记](#1检查翻译标记)由[Marker](marker/README.md)负责
 2. [提取词条](#2提取词条) 由Django自带makemessages命令进行词条提取
 3. [机器翻译词条](#3机器翻译词条) 由[Translator](translator/README.md)负责
-4. [人工检验词条](#4人工检验词条) 由[Extractor](extractor/README.md)导出json文件, 交付给负责人
+4. [人工检验词条](#4人工检验词条) 由[Exporter](exporter/README.md)导出json文件, 交付给负责人
 5. [将确认无误的词条写入po文件](#5将确认无误的词条写入po文件) 由[Translator](translator/README.md)负责
 6. [编译](#6编译) 由Django自带compilemessages命令进行编译
 
@@ -81,7 +81,7 @@ python jinx.py translator -p ${YOUR_PO_FILE} -o {YOUR_OFFICIAL_DICT_DIR}
 ### 4.人工检验词条
 导出词条
 ```bash
-python jinx.py extractor -p ${YOUR_PO_FILE} -e ${YOUR_OUTPUT_DIR}
+python jinx.py exporter -p ${YOUR_PO_FILE} -e ${YOUR_OUTPUT_DIR}
 ```
 - YOUR_PO_FILE: 你的po文件目录, 也支持填入locale目录, 会自动寻找locale目录下的对应语言po文件
 - YOUR_OUTPUT_DIR: 你的输出文件名, 暂时支持json, 默认为contents.json
