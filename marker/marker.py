@@ -230,10 +230,10 @@ class FileMarker:
         主流程
         """
         self._extract_tokens()
+        self._check()
         # 仅提取tokens, 不做后续处理
         if only_extract_tokens:
             return
-        self._check()
         # 严格模式下, 存在需要修复的f-string格式语句, 跳过当前文件的后续流程
         if not self.is_legal and marker_config.strict_mode:
             return
