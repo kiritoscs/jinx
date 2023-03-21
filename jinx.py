@@ -3,6 +3,7 @@ import sys
 
 import click
 
+from compiler import CompileTool
 from exporter import ExportTool
 from extractor import ExtractTool
 from marker import MarkerTool
@@ -55,6 +56,12 @@ def extractor(target_path, locale_path):
 @click.option("--export_path", "-e", type=str, required=False, help="导出JSON路径", default="contents.json")
 def exporter(locale_path, export_path):
     ExportTool(locale_path=locale_path, export_path=export_path).handle()
+
+
+@cli.command(help="po编译成mo")
+@click.option("--locale_path", "-l", type=click.Path(exists=True), required=True, help="需要提取的locale目录或者django.po路径")
+def compiler(locale_path):
+    CompileTool(locale_path=locale_path).handle()
 
 
 if __name__ == "__main__":
