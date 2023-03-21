@@ -8,6 +8,7 @@ from typing import Generator
 
 from rich.progress import track
 
+from common import Prompt
 from common.config import config_util
 from common.utils import list_files, read_file, write_file
 from marker.plugins.file_filter import file_filter
@@ -77,7 +78,7 @@ class FileMarker:
             self._tokens[t.start_at.row].append(t)
 
         except Exception as e:
-            print(f"[ERROR] handler_string, token: {asdict(t)}, error: {e}")
+            Prompt.error("handler_string, token: {token}, error: {e}", token=asdict(t), e=e)
 
     def _extract_tokens(self) -> None:
         """
@@ -147,7 +148,7 @@ class FileMarker:
 
         if not self.is_legal:
             for _t in self._illegal_tokens:
-                print(f"国际化不支持f-string格式化, 行: {_t.start_at.row}, 单词: {_t.token}")
+                Prompt.warning("Unsupported f-string, row: {row}, token: {token}", row=_t.start_at.row, token=_t.token)
 
     def _mark(self) -> None:
         """
@@ -205,7 +206,7 @@ class FileMarker:
                     insert_idx = _idx + 1
                     break
             except Exception as e:
-                print(f"查找空行失败: {e}")
+                Prompt.error(f"Failed to find empty line: {e}")
         if not insert_idx:
             for _idx, _line in enumerate(self._lines):
                 if _line == "\n" or not _line.startswith("#"):
