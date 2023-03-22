@@ -1,21 +1,37 @@
 import typing
+from dataclasses import dataclass
 
 from rich.progress import track
 
 
-def match_official_dict(official_dict: typing.Dict[str, str], content: str) -> str:
+@dataclass
+class MatchResult:
+    """匹配结果"""
+
+    content: str
+    full_match: bool = False
+
+
+def match_official_dict(official_dict: typing.Dict[str, str], content: str) -> MatchResult:
     """匹配官方词典, 最大匹配"""
+    mr = MatchResult(content=content, full_match=False)
     if official_dict:
         if content in official_dict:
-            return official_dict[content]
+            if not official_dict[content]:
+                return mr
+            mr.content = official_dict[content]
+            mr.full_match = True
+            return mr
+
         max_official_content = ""
         for official_content, translate_content in official_dict.items():
             if official_content in content:
                 if len(official_content) > len(max_official_content):
                     max_official_content = official_content
-        if max_official_content:
+        if max_official_content and official_dict[max_official_content]:
             content = content.replace(max_official_content, official_dict[max_official_content])
-    return content
+            mr.content = content
+    return mr
 
 
 class TranslatorBase:
@@ -39,7 +55,7 @@ class TranslatorBase:
         """翻译结果"""
         return self._result
 
-    def pre_translate(self, content: str) -> str:
+    def pre_translate(self, content: str) -> MatchResult:
         """预翻译, 即匹配官方词典"""
         return match_official_dict(self._official_dict, content)
 

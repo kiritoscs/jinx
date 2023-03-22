@@ -15,21 +15,18 @@ class TranslatorConfig:
     """翻译配置"""
 
     provider: str = TranslatorProviderEnum.GoogleAPI
-    mode: str = TranslatorModeEnum.UPDATE
 
     def __post_init__(self):
         TranslatorProviderEnum.check_member(self.provider)
-        TranslatorModeEnum.check_member(self.mode)
 
 
 translator_config = TranslatorConfig(
     provider=config_util.get("translator.provider", TranslatorProviderEnum.GoogleAPI),
-    mode=config_util.get("translator.mode", TranslatorModeEnum.UPDATE),
 )
 
 
 class TranslatorTool:
-    def __init__(self, locale_path: str = None, official_dict_path: str = None):
+    def __init__(self, locale_path: str = None, official_dict_path: str = None, mode: str = TranslatorModeEnum.UPDATE):
         """
         翻译工具
         :param locale_path: Django locale目录, 也可以是po文件路径
@@ -37,6 +34,7 @@ class TranslatorTool:
         """
         self.locale_path = locale_path
         self.official_dict_path = official_dict_path
+        self.mode = mode
         self.po_file: PoUtil
         self.official_dict: typing.Dict[str, str] = {}
         self._init_po()
@@ -63,7 +61,7 @@ class TranslatorTool:
             Prompt.panic("官方词典文件{official_dict_path}格式错误: {e}", official_dict_path=self.official_dict_path, e=e)
 
     def _init_client(self):
-        if translator_config.mode == TranslatorModeEnum.UPDATE:
+        if self.mode == TranslatorModeEnum.UPDATE:
             contents = [entry.msgid for entry in self.po_file.po if entry.msgstr == ""]
         else:
             contents = self.po_file.msgid_list
@@ -79,4 +77,4 @@ class TranslatorTool:
         # 翻译
         self._client.translate()
         # 写入po文件
-        self.po_file.write(data=self._client.result, mode=translator_config.mode)
+        self.po_file.write(data=self._client.result, mode=self.mode)

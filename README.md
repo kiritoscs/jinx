@@ -96,9 +96,8 @@ python jinx.py exporter -p ${YOUR_PO_FILE} -e ${YOUR_OUTPUT_DIR}
 - YOUR_OUTPUT_DIR: 你的输出文件名, 暂时支持json, 默认为contents.json
 
 ### 5.将确认无误的词条写入po文件
-此时先修改配置文件里的`[translator.mode]`为overwrite, 再进行以下操作
 ```bash
-python jinx.py translator -p ${YOUR_PO_FILE} -o ${YOUR_FINAL_JSON_FILE}
+python jinx.py translator -p ${YOUR_PO_FILE} -o ${YOUR_FINAL_JSON_FILE} -m overwrite
 ```
 - YOUR_PO_FILE: 你的po文件目录, 也支持填入locale目录, 会自动寻找locale目录下的对应语言po文件
 - YOUR_FINAL_JSON_FILE: 你的最终json文件, 用于更新po文件

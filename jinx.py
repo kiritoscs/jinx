@@ -36,12 +36,11 @@ def marker(target_path):
 
 
 @cli.command(help="翻译需要国际化的词条")
-# @click.pass_context
 @click.option("--locale_path", "-p", type=click.Path(exists=True), required=True, help="需要翻译的locale目录或者django.po路径")
 @click.option("--official_dict_path", "-o", type=str, required=False, help="官方词典路径, JSON文件")
-# def translator(ctx, locale_path, official_dict_path):
-def translator(locale_path, official_dict_path):
-    TranslatorTool(locale_path=locale_path, official_dict_path=official_dict_path).handle()
+@click.option("--mode", "-m", type=str, required=False, help="翻译模式, update|overwrite", default="update")
+def translator(locale_path, official_dict_path, mode):
+    TranslatorTool(locale_path=locale_path, official_dict_path=official_dict_path, mode=mode).handle()
 
 
 @cli.command(help="提取项目中的国际化字符串到po文件中")

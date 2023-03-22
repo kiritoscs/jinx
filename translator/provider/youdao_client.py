@@ -50,6 +50,10 @@ class YoudaoClient(TranslatorBase):
         return requests.post(youdao_client_config.url, data=data, headers=headers)
 
     def translate_once(self, content: str) -> str:
+        match_result = self.pre_translate(content)
+        if match_result.full_match:
+            return match_result.content
+        content = match_result.content
         salt = str(uuid.uuid1())
         cur_time = str(int(time.time()))
         sign_str = youdao_client_config.app_key + self.truncate(content)

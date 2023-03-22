@@ -24,8 +24,10 @@ class GoogleAPI(TranslatorBase):
 
     def translate_once(self, content: str):
         """翻译单个语句"""
-        content = self.pre_translate(content)
-        url = self._generate_url(content)
+        match_result = self.pre_translate(content)
+        if match_result.full_match:
+            return match_result.content
+        url = self._generate_url(match_result.content)
         response = requests.get(url)
         data = response.text
         expr = r'(?s)class="(?:t0|result-container)">(.*?)<'
