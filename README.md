@@ -46,7 +46,7 @@ mv jinx.template.toml jinx.toml
 ### 1.检查翻译标记
 
 ```bash
-python jinx.py marker -d ${YOUR_DJANGO_PROJECT_DIR}
+python jinx.py marker -t ${YOUR_DJANGO_PROJECT_DIR}
 ```
 - YOUR_DJANGO_PROJECT_DIR: 你的Django项目目录
 
@@ -90,7 +90,7 @@ python jinx.py translator -p ${YOUR_PO_FILE} -o {YOUR_OFFICIAL_DICT_DIR}
 ### 4.人工检验词条
 导出词条
 ```bash
-python jinx.py exporter -p ${YOUR_PO_FILE} -e ${YOUR_OUTPUT_DIR}
+python jinx.py exporter -l ${YOUR_PO_FILE} -e ${YOUR_OUTPUT_DIR}
 ```
 - YOUR_PO_FILE: 你的po文件目录, 也支持填入locale目录, 会自动寻找locale目录下的对应语言po文件
 - YOUR_OUTPUT_DIR: 你的输出文件名, 暂时支持json, 默认为contents.json

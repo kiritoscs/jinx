@@ -28,7 +28,7 @@ def cli(config_path):
 
 @cli.command(help="标记国际化字符串")
 # @click.pass_context
-@click.option("--target_path", "-d", type=click.Path(exists=True), required=True, help="要标记的目录")
+@click.option("--target_path", "-t", type=click.Path(exists=True), required=True, help="要标记的目录")
 # @click.option("--multi_thread", "-m", type=bool, required=False, help="是否开启多线程", default=False)
 # def marker(ctx, target_path):
 def marker(target_path):
@@ -51,7 +51,7 @@ def extractor(target_path, locale_path):
 
 
 @cli.command(help="从po文件中导出词条")
-@click.option("--locale_path", "-p", type=click.Path(exists=True), required=True, help="需要提取的locale目录或者django.po路径")
+@click.option("--locale_path", "-l", type=click.Path(exists=True), required=True, help="需要提取的locale目录或者django.po路径")
 @click.option("--export_path", "-e", type=str, required=False, help="导出JSON路径", default="contents.json")
 def exporter(locale_path, export_path):
     ExportTool(locale_path=locale_path, export_path=export_path).handle()

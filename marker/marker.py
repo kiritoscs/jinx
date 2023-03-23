@@ -148,7 +148,12 @@ class FileMarker:
 
         if not self.is_legal:
             for _t in self._illegal_tokens:
-                Prompt.warning("Unsupported f-string, row: {row}, token: {token}", row=_t.start_at.row, token=_t.token)
+                Prompt.warning(
+                    "Unsupported f-string, {filepath}:{row}, token: {token}",
+                    filepath=self._fp,
+                    row=_t.start_at.row,
+                    token=_t.token,
+                )
 
     def _mark(self) -> None:
         """
