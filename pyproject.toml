@@ -1,5 +1,50 @@
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[project]
+name = "django-jinx"
+version = "0.0.1"
+authors = [
+  { name="kiritoscs", email="kiritoscs@gmail.com" },
+]
+license = {file = "LICENSE"}
+description = "A full-stack i18n solution for Django"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "arrow >= 1.2.2",
+  "click >= 8.1.3",
+  "polib >= 1.2.0",
+  "requests >= 2.28.2",
+  "rich >= 13.3.2",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+keywords = [
+    "django",
+    "i18n",
+    "internationalization",
+    "translation",
+    "localization",
+    "l10n",
+    "django-i18n",
+    "django-internationalization",
+    "django-translation",
+    "django-localization",
+    "django-l10n",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/kiritoscs/jinx"
+"Bug Tracker" = "https://github.com/kiritoscs/jinx/issues"
+
+
 [tool.poetry]
-name = "Jinx"
+name = "django-jinx"
 version = "0.1.0"
 description = "Django国际化工具"
 authors = ["Kiritoscs <kiritoscs@gmail.com>"]
@@ -9,7 +54,6 @@ python = "3.11.0"
 arrow = "1.2.2"
 click = "8.1.3"
 polib = "1.2.0"
-types-polib = "1.2.0.0"
 requests = "2.28.2"
 rich = "13.3.2"
 
@@ -18,9 +62,6 @@ name = "default"
 url = "https://mirrors.tencent.com/pypi/simple/"
 default = true
 
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
 
 [tool.black]
 line-length = 119

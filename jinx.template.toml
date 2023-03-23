@@ -72,8 +72,6 @@ not_endswith = ["\"\"\"", "'''"]
 [translator]
 # 翻译器
 provider = "google_api"
-#mode = "update"
-mode = "overwrite"
 
 [youdao_client]
 # 有道翻译客户端配置
