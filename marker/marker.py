@@ -120,7 +120,9 @@ class FileMarker:
             return True
         # 考虑到字符串超长导致的代码格式化, 检查上一行是否添加了翻译函数
         if translation_func.prefix in self._lines[t.start_at.row - 2]:
-            return True
+            _current_line_start = current_line[: _current_prefix_start + 1]
+            _current_line_start = "".join(_current_line_start.split(" "))
+            return False if _current_line_start else True
         return False
 
     def _check(self) -> None:
