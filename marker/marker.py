@@ -118,11 +118,14 @@ class FileMarker:
         # 如果当前行已经存在翻译函数, 则不再添加
         if _current_prefix.strip() == translation_func.prefix.strip():
             return True
+        _current_line_start = current_line[: _current_prefix_start + 1]
         # 考虑到字符串超长导致的代码格式化, 检查上一行是否添加了翻译函数
-        if translation_func.prefix in self._lines[t.start_at.row - 2]:
-            _current_line_start = current_line[: _current_prefix_start + 1]
-            _current_line_start = "".join(_current_line_start.split(" "))
-            return False if _current_line_start else True
+        if translation_func.prefix in self._lines[t.start_at.row - 2] and not "".join(_current_line_start.split(" ")):
+            return True
+
+        if _current_line_start.rstrip(" ").endswith("'") or _current_line_start.rstrip(" ").endswith('"'):
+            return True
+
         return False
 
     def _check(self) -> None:
