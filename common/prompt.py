@@ -1,3 +1,4 @@
+import os
 import sys
 import typing
 
@@ -9,6 +10,7 @@ console = Console()
 class PromptColorEnum:
     """提示颜色枚举"""
 
+    DEBUG = "cyan"
     INFO = "green"
     WARNING = "blue"
     ERROR = "red"
@@ -33,6 +35,11 @@ class Prompt:
             for key, value in kwargs.items():
                 msg = msg.replace(f"{{{key}}}", f"[{color}]{value}[/{color}]")
         console.print(msg)
+
+    @classmethod
+    def debug(cls, msg: typing.Any, **kwargs):
+        if os.environ.get("DEBUG", False):
+            cls.fprint("debug", msg, **kwargs)
 
     @classmethod
     def info(cls, msg: typing.Any, **kwargs):

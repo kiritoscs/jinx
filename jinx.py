@@ -19,11 +19,20 @@ from translator import TranslatorTool
     help="配置文件路径",
     default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "jinx.toml"),
 )
+@click.option(
+    "-d",
+    "--debug",
+    type=bool,
+    required=False,
+    help="是否开启debug模式",
+    default=False,
+)
 # @click.pass_context
 # def cli(ctx, config_path):
-def cli(config_path):
+def cli(config_path, debug):
     # ctx.ensure_object(dict)
     os.environ.setdefault("CONFIG_PATH", config_path)
+    os.environ.setdefault("DEBUG", "True" if debug else "False")
 
 
 @cli.command(help="标记国际化字符串")

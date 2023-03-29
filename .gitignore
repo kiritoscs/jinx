@@ -14,3 +14,9 @@ jinx.toml
 # 构建生成的文件
 build
 dist
+
+# pytest生成的文件
+.coverage
+.coverage.*
+.cache
+.pytest_cache

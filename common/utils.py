@@ -1,10 +1,11 @@
 """
 This file contains utility functions for the project.
 """
-import json
 import os
 import typing
 from importlib import import_module
+
+import json5 as json
 
 from common.constants import DEFAULT_ENCODING, FILE_SUFFIX
 
