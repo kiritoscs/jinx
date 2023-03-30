@@ -15,6 +15,10 @@ class Pos:
     row: int = 0
     cow: int = 0
 
+    def __bool__(self):
+        """Pos为空的条件"""
+        return self.row != 0 or self.cow != 0
+
 
 @dataclass
 class Token:
