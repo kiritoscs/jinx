@@ -4,7 +4,7 @@ build-backend = "pdm.backend"
 
 [project]
 name = "django-jinx"
-version = "0.0.1"
+version = "1.0.0"
 authors = [
   { name="kiritoscs", email="kiritoscs@gmail.com" },
 ]
@@ -43,10 +43,13 @@ keywords = [
 "Homepage" = "https://github.com/kiritoscs/jinx"
 "Bug Tracker" = "https://github.com/kiritoscs/jinx/issues"
 
+[project.scripts]
+jinx = "jinx.cli:cli"
+
 
 [tool.poetry]
 name = "django-jinx"
-version = "0.1.0"
+version = "1.0.0"
 description = "Django国际化工具"
 authors = ["Kiritoscs <kiritoscs@gmail.com>"]
 
