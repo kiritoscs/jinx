@@ -15,7 +15,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     type=click.Path(exists=False),
     required=False,
     help="Configuration path",
-    default=os.path.join(BASE_DIR, "jinx.toml"),
+    default=os.path.join(os.getcwd(), "jinx.toml"),
 )
 @click.option(
     "-d",
