@@ -4,7 +4,7 @@ from io import StringIO
 from tokenize import TokenInfo
 from typing import Generator
 
-from common.utils import read_file
+from jinx.common.utils import read_file
 
 
 @dataclass

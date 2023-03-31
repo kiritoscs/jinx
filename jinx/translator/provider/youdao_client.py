@@ -5,9 +5,9 @@ from dataclasses import dataclass
 
 import requests
 
-from common.config import config_util
-from common.constants import YOU_DAO_SDK_URL, YouDaoSupportDomainEnum
-from translator.provider.base import TranslatorBase
+from jinx.common.config import config_util
+from jinx.common.constants import YOU_DAO_SDK_URL, YouDaoSupportDomainEnum
+from jinx.translator.provider.base import TranslatorBase
 
 
 @dataclass

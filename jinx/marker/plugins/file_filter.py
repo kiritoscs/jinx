@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from common.config import config_util
+from jinx.common.config import config_util
 
 
 @dataclass

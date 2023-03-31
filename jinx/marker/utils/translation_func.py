@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
-from common.config import config_util
-from common.constants import (
+from jinx.common.config import config_util
+from jinx.common.constants import (
     DEFAULT_TRANSLATION_FUNC_ALIAS,
     DJANGO_TRANSLATE_FUNC_IMPORT_PATH_PREFIX,
     DjangoTranslationFuncEnum,

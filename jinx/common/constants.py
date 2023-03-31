@@ -3,7 +3,7 @@ import os
 
 from rich.table import Table
 
-from common.prompt import Prompt
+from jinx.common.prompt import Prompt
 
 # 最大线程数
 _cpu_count = os.cpu_count()

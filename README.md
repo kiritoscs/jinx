@@ -15,12 +15,12 @@ Django国际化常常包含以下流程
 
 那么jinx可以帮助你完成以下工作
 
-1. [检查翻译标记](#1检查翻译标记)由[Marker](marker/README.md)负责
-2. [提取词条](#2提取词条) 由[Extractor](extractor/README.md)负责, 或者 利用Django自带makemessages命令进行词条提取
-3. [机器翻译词条](#3机器翻译词条) 由[Translator](translator/README.md)负责
-4. [人工检验词条](#4人工检验词条) 由[Exporter](exporter/README.md)导出json文件, 交付给负责人
-5. [将确认无误的词条写入po文件](#5将确认无误的词条写入po文件) 由[Translator](translator/README.md)负责
-6. [编译](#6编译) 由[Compiler](compiler/README.md)负责, 或者 利用Django自带compilemessages命令进行编译
+1. [检查翻译标记](#1检查翻译标记)由[Marker](jinx/marker/README.md)负责
+2. [提取词条](#2提取词条) 由[Extractor](jinx/extractor/README.md)负责, 或者 利用Django自带makemessages命令进行词条提取
+3. [机器翻译词条](#3机器翻译词条) 由[Translator](jinx/translator/README.md)负责
+4. [人工检验词条](#4人工检验词条) 由[Exporter](jinx/exporter/README.md)导出json文件, 交付给负责人
+5. [将确认无误的词条写入po文件](#5将确认无误的词条写入po文件) 由[Translator](jinx/translator/README.md)负责
+6. [编译](#6编译) 由[Compiler](jinx/compiler/README.md)负责, 或者 利用Django自带compilemessages命令进行编译
 
 
 ## 快速开始
@@ -52,7 +52,7 @@ python jinx.py marker -t ${YOUR_DJANGO_PROJECT_DIR}
 
 详细配置参考[配置说明](#配置说明)
 
-标记之后, 需要检查一下标记是否正确, 有时候会出现标记错误的情况, 具体参考[Marker](marker/README.md)
+标记之后, 需要检查一下标记是否正确, 有时候会出现标记错误的情况, 具体参考[Marker](jinx/marker/README.md)
 
 ### 2.提取词条
 **PlanA**: 利用extractor提取词条, 本质是基于marker的结果进行提取, 所以需要先检查标记结果

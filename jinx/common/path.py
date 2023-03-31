@@ -1,6 +1,6 @@
 import os
 
-from common.prompt import Prompt
+from jinx.common.prompt import Prompt
 
 
 def check_exist(path):

@@ -1,11 +1,11 @@
 import os
 import typing
 
-from common import PoUtil, Prompt
-from common.config import language
-from common.constants import PoFileModeEnum
-from marker import MarkerTool
-from marker.utils.token import Token
+from jinx.common import PoUtil, Prompt
+from jinx.common.constants import PoFileModeEnum
+from jinx.config import language
+from jinx.marker import MarkerTool
+from jinx.marker.utils.token import Token
 
 
 class ExtractTool:

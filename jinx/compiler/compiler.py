@@ -1,7 +1,7 @@
 import os
 
-from common import PoUtil, Prompt
-from common.config import language
+from jinx.common import PoUtil, Prompt
+from jinx.config import language
 
 
 class CompileTool:

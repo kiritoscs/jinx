@@ -1,8 +1,8 @@
 import typing
 
-from common import Prompt
-from common.constants import TranslatorProviderEnum
-from common.utils import import_string
+from jinx.common import Prompt
+from jinx.common.constants import TranslatorProviderEnum
+from jinx.common.utils import import_string
 
 
 class Provider:

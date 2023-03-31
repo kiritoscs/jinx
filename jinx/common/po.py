@@ -4,10 +4,10 @@ import arrow
 import json5 as json
 import polib
 
-from common.constants import PoFileModeEnum
-from common.path import check_exist
-from common.prompt import Prompt
-from common.token import Token
+from jinx.common.constants import PoFileModeEnum
+from jinx.common.path import check_exist
+from jinx.common.prompt import Prompt
+from jinx.common.token import Token
 
 """
 POFile对象

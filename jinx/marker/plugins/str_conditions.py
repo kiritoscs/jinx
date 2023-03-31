@@ -1,8 +1,9 @@
 import re
 from dataclasses import asdict, dataclass
 
-from common.config import config_util, language
-from marker.utils.token import Token
+from jinx.common.config import config_util
+from jinx.config import language
+from jinx.marker.utils.token import Token
 
 
 @dataclass

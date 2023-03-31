@@ -2,12 +2,12 @@ import os
 import typing
 from dataclasses import dataclass
 
-from common import Prompt
-from common.config import config_util, language
-from common.constants import TranslatorModeEnum, TranslatorProviderEnum
-from common.po import PoUtil
-from common.utils import read_file
-from translator.provider import Provider
+from jinx.common import PoUtil, Prompt
+from jinx.common.config import config_util
+from jinx.common.constants import TranslatorModeEnum, TranslatorProviderEnum
+from jinx.common.utils import read_file
+from jinx.config import language
+from jinx.translator.provider import Provider
 
 
 @dataclass

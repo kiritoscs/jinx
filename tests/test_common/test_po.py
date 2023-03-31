@@ -1,7 +1,7 @@
 import os
 
-from common.po import PoUtil
-from common.token import Pos, Token
+from jinx.common import PoUtil
+from jinx.common.token import Pos, Token
 
 # 项目根目录
 BASE_DIR = os.environ.get("BASE_DIR", "")

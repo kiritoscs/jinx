@@ -2,12 +2,13 @@
 This file contains utility functions for the project.
 """
 import os
+import shutil
 import typing
 from importlib import import_module
 
 import json5 as json
 
-from common.constants import DEFAULT_ENCODING, FILE_SUFFIX
+from jinx.common.constants import DEFAULT_ENCODING, FILE_SUFFIX
 
 
 def array_chunk(data: list[typing.Any], size=100):
@@ -85,3 +86,8 @@ def import_string(dotted_path):
         return getattr(module, class_name)
     except AttributeError as err:
         raise ImportError('Module "%s" does not define a "%s" attribute/class' % (module_path, class_name)) from err
+
+
+def copy_from_template(template_path: str, target_path: str):
+    """copy file from template"""
+    shutil.copyfile(template_path, target_path)

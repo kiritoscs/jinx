@@ -1,7 +1,7 @@
 import os
 
-from common.config import language
-from common.po import PoUtil
+from jinx.common.po import PoUtil
+from jinx.config import language
 
 
 class ExportTool:

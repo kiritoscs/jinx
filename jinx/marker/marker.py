@@ -8,13 +8,13 @@ from typing import Generator
 
 from rich.progress import track
 
-from common import Prompt
-from common.config import config_util
-from common.utils import list_files, read_file, write_file
-from marker.plugins.file_filter import file_filter
-from marker.plugins.str_conditions import StrCondition
-from marker.utils.token import Token, TokenPoint, generate_tokens
-from marker.utils.translation_func import (
+from jinx.common import Prompt
+from jinx.common.config import config_util
+from jinx.common.utils import list_files, read_file, write_file
+from jinx.marker.plugins.file_filter import file_filter
+from jinx.marker.plugins.str_conditions import StrCondition
+from jinx.marker.utils.token import Token, TokenPoint, generate_tokens
+from jinx.marker.utils.translation_func import (
     DjangoTranslationFunc,
     DjangoTranslationFuncParser,
 )

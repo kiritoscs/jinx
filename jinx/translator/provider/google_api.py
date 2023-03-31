@@ -4,8 +4,8 @@ from urllib import parse
 
 import requests
 
-from common import constants
-from translator.provider.base import TranslatorBase
+from jinx.common import constants
+from jinx.translator.provider.base import TranslatorBase
 
 
 class GoogleAPI(TranslatorBase):
