@@ -3,7 +3,7 @@ import sys
 
 import click
 
-from jinx.common.utils import copy_from_template
+from jinx.common.utils import copy_file
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -34,7 +34,7 @@ def cli(config_path, debug):
     if not os.path.exists(config_path):
         if click.confirm(click.style("config file not found, do you want to create from template ?", fg="yellow")):
             template_path = os.path.join(BASE_DIR, "templates", "jinx.template.toml")
-            copy_from_template(template_path, config_path)
+            copy_file(template_path, config_path)
             click.echo(click.style(f"config file created: {config_path}", fg="green"), nl=True)
     # 初始化配置
     from jinx.common import ConfigUtil

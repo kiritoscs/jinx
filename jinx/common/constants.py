@@ -156,13 +156,13 @@ LanguageRegexEnum = {
 
 
 class PoFileModeEnum(EnhanceEnum):
-    """文件模式"""
+    """Po文件模式"""
 
     NAME = "Po file mode"
 
-    # 覆盖写入
+    # 覆盖写入, 完全覆盖所有的msgstr
     OVERWRITE = "overwrite"
-    # 更新写入
+    # 更新写入, 只更新已有的msgid且msgstr为空的翻译
     UPDATE = "update"
     # 追加写入
     APPEND = "append"

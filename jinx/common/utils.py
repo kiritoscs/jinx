@@ -6,6 +6,7 @@ import shutil
 import typing
 from importlib import import_module
 
+import arrow
 import json5 as json
 
 from jinx.common.constants import DEFAULT_ENCODING, FILE_SUFFIX
@@ -88,6 +89,13 @@ def import_string(dotted_path):
         raise ImportError('Module "%s" does not define a "%s" attribute/class' % (module_path, class_name)) from err
 
 
-def copy_from_template(template_path: str, target_path: str):
-    """copy file from template"""
-    shutil.copyfile(template_path, target_path)
+def copy_file(file_path: str, target_path: str = None):
+    """
+    copy file from file_path to target_path
+    :param file_path: file path
+    :param target_path: target path, default is file_path_bak_current_time
+    """
+    if not target_path:
+        current = arrow.now().format("YYYY-MM-DDTHH-mm-ss")
+        target_path = f"{file_path}_bak_{current}"
+    shutil.copyfile(file_path, target_path)
