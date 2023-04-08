@@ -2,9 +2,10 @@ import html
 import re
 from urllib import parse
 
+import curlify
 import requests
 
-from jinx.common import constants
+from jinx.common import Prompt, constants
 from jinx.translator.provider.base import TranslatorBase
 
 
@@ -26,6 +27,7 @@ class GoogleAPI(TranslatorBase):
         """翻译单个语句"""
         url = self._generate_url(content)
         response = requests.get(url)
+        Prompt.debug("curl: {curl}", curl=curlify.to_curl(response.request))
         data = response.text
         expr = r'(?s)class="(?:t0|result-container)">(.*?)<'
         result = re.findall(expr, data)

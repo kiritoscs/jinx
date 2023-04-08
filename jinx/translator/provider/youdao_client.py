@@ -3,8 +3,10 @@ import time
 import uuid
 from dataclasses import dataclass
 
+import curlify
 import requests
 
+from jinx.common import Prompt
 from jinx.common.config import config_util
 from jinx.common.constants import YOU_DAO_SDK_URL, YouDaoSupportDomainEnum
 from jinx.translator.provider.base import TranslatorBase
@@ -47,7 +49,9 @@ class YoudaoClient(TranslatorBase):
     @staticmethod
     def do_request(data):
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-        return requests.post(youdao_client_config.url, data=data, headers=headers)
+        response = requests.post(youdao_client_config.url, data=data, headers=headers)
+        Prompt.debug("curl: {curl}", curl=curlify.to_curl(response.request))
+        return response
 
     def translate_once(self, content: str) -> str:
         match_result = self.pre_translate(content)

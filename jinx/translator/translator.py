@@ -58,13 +58,17 @@ class TranslatorTool:
             return
         try:
             if os.path.isdir(self.official_dict_path):
+                _official_dict_file_list = []
                 for file in os.listdir(self.official_dict_path):
                     if file.endswith(".json"):
+                        _official_dict_file_list.append(file)
                         self.official_dict.update(
                             read_file(fp=os.path.join(self.official_dict_path, file), is_json=True)
                         )
+                Prompt.info("Official dict files: {files}", files=",".join(_official_dict_file_list))
             else:
                 self.official_dict = read_file(fp=self.official_dict_path, is_json=True)
+                Prompt.info("Official dict file: {file}", file=self.official_dict_path)
         except Exception as e:
             Prompt.panic(
                 "Failed to Parse official dict: {official_dict_path}: {e}",

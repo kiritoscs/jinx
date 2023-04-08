@@ -38,7 +38,7 @@ class Prompt:
 
     @classmethod
     def debug(cls, msg: typing.Any, **kwargs):
-        if os.environ.get("DEBUG", False):
+        if os.environ.get("DEBUG", "False"):
             cls.fprint("debug", msg, **kwargs)
 
     @classmethod
