@@ -3,6 +3,7 @@
 """
 from dataclasses import dataclass, field
 
+import polib
 from polib import POEntry
 
 
@@ -38,12 +39,43 @@ class Token:
         if not self.occurrences and self.filepath and self.start:
             self.occurrences = [(self.filepath, str(self.start.row))]
 
-    def to_poentry(self):
+    def to_po_entry(self) -> polib.POEntry:
         """
         将Token转换为POEntry
         """
-        poentry = POEntry(
+        entry = POEntry(
             msgid=self.msgid, msgstr=self.msgstr, comment=self.comment, flags=self.flags, occurrences=self.occurrences
         )
-        poentry.obsolete = self.obsolete
-        return poentry
+        entry.obsolete = self.obsolete
+        return entry
+
+    @classmethod
+    def create_from_dict(cls, data: dict) -> list["Token"]:
+        """
+        从字典创建Token
+        """
+        tokens: list[Token] = []
+        for key, value in data.items():
+            tokens.append(
+                Token(
+                    msgid=key,
+                    msgstr=value.get("msgstr", ""),
+                )
+            )
+        return tokens
+
+    @classmethod
+    def create_from_po_entry(cls, entry: polib.POEntry) -> "Token":
+        """
+        从POEntry创建Token
+        """
+        return Token(
+            msgid=entry.msgid,
+            msgstr=entry.msgstr,
+            filepath=entry.occurrences[0][0],
+            obsolete=entry.obsolete,
+            comment=entry.comment,
+            flags=entry.flags,
+            occurrences=entry.occurrences,
+            start=Pos(row=entry.occurrences[0][1]),
+        )

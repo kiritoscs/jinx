@@ -32,9 +32,6 @@ class PoUtil:
             self.po = polib.pofile(po_file_path)
         except Exception as e:
             Prompt.panic("Failed to load {po_file_path}: {e}", po_file=po_file_path, e=e)
-        # 初始化时读取po文件内现有所有msg
-        self.po_content_list: list[polib.POEntry] = [entry for entry in self.po if not entry.obsolete]
-        self.po_content_dict: dict[str, str] = {entry.msgid: entry.msgstr for entry in self.po if not entry.obsolete}
 
     def _get_write_method(self, mode: str):
         """获取写入方法"""
@@ -76,8 +73,7 @@ class PoUtil:
         self, new_po_file_path: str = None, with_entry: bool = False, with_obsolete: bool = False
     ) -> polib.POFile:
         """
-        复制po文件, 但不包含entry
-        :param with_entry:
+        复制POFile, 但可以不包含entry
         :param with_obsolete: 是否包含已废弃的msgid
         :param new_po_file_path: 新po文件路径, 默认为None, 则使用原po文件路径
         :param with_entry: 是否包含entry
@@ -125,7 +121,7 @@ class PoUtil:
         no_obsolete_entry_msgid_list = [entry.msgid for entry in self.read_list(po=po, with_obsolete=False)]
         for token in tokens:
             if token.msgid not in no_obsolete_entry_msgid_list:
-                po.append(token.to_poentry())
+                po.append(token.to_po_entry())
         po.save()
 
     def overwrite_write(self, tokens: list[Token], with_obsolete: bool = False, new_po_file_path: str = None):
@@ -137,21 +133,15 @@ class PoUtil:
         :param new_po_file_path: 新po文件路径, 默认为None, 则使用原po文件路径
         """
         token_info = {token.msgid: token for token in tokens}
-        already_append_msgid_list = []
-        po = self.copy_po(new_po_file_path=new_po_file_path, with_obsolete=with_obsolete, with_entry=False)
-
-        entry_list = self.read_list()
+        entry_list = self.read_list(with_obsolete=with_obsolete)
+        po = self.copy_po(with_obsolete=with_obsolete, new_po_file_path=new_po_file_path, with_entry=False)
         for entry in entry_list:
-            if entry.msgid in token_info:
-                # 如果直接修改entry会导致原文件内容被覆盖
-                new_entry = self.copy_entry(entry)
-                new_entry.msgstr = token_info[entry.msgid].msgstr
-                po.append(new_entry)
-                already_append_msgid_list.append(new_entry.msgid)
-        for token in tokens:
-            if token.msgid in already_append_msgid_list:
+            if entry.msgid not in token_info:
+                po.append(entry)
                 continue
-            po.append(token.to_poentry())
+            new_entry = self.copy_entry(entry)
+            new_entry.msgstr = token_info[entry.msgid].msgstr
+            po.append(new_entry)
         po.save()
 
     def update_write(self, tokens: list[Token], with_obsolete: bool = False, new_po_file_path: str = None):

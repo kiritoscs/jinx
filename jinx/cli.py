@@ -65,7 +65,11 @@ def marker(target_path):
     help="Your django project locale path or django.po file path which you want to translate",
 )
 @click.option(
-    "--official_dict_path", "-o", type=str, required=False, help="Your official dictionary file path, end with '.json'"
+    "--official_dict_path",
+    "-o",
+    type=str,
+    required=False,
+    help="Your official dictionary file path, if not specified, will merge all json file in the current directory",
 )
 @click.option(
     "--mode", "-m", type=str, required=False, help="Translate mode, support update|overwrite", default="update"

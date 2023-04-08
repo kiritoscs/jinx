@@ -46,11 +46,18 @@ MESSAGES = [
         "occurrences": [("dir_1/file_1.py", '2')],
     },
     {
+        "msgid": "测试msgid",
+        "msgstr": "test msgid",
+        "comment": "comment_2",
+        "flags": [],
+        "occurrences": [("dir_1/file_1.py", '3')],
+    },
+    {
         "msgid": "测试删除msgid",
         "msgstr": "test delete msgid",
         "comment": "comment_3",
         "flags": [],
-        "occurrences": [("dir_1/file_1.py", '3')],
+        "occurrences": [("dir_1/file_1.py", '4')],
     },
 ]
 # 测试用po文件信息, 不包含过期
@@ -64,7 +71,6 @@ TEST_OVERWRITE_WRITE_FILE = os.path.join(TEST_CACHE_DIR, "test_overwrite_write.p
 TEST_OVERWRITE_WRITE_FILE_WITH_NO_OBSOLETE = os.path.join(TEST_CACHE_DIR, "test_overwrite_write_with_no_obsolete.po")
 TEST_UPDATE_WRITE_FILE = os.path.join(TEST_CACHE_DIR, "test_update_write.po")
 TEST_UPDATE_WRITE_FILE_WITH_NO_OBSOLETE = os.path.join(TEST_CACHE_DIR, "test_update_write_with_no_obsolete.po")
-
 
 NEED_DELETE_FILES = [
     TEST_APPEND_WRITE_FILE,
@@ -82,7 +88,7 @@ APPEND_TOKENS = [
         msgstr="test append msgid",
         comment="comment_4",
         flags=[],
-        occurrences=[("dir_1/file_1.py", '4')],
+        occurrences=[("dir_1/file_1.py", '5')],
         start=Pos(),
         end=Pos(),
     ),
@@ -94,7 +100,7 @@ APPEND_MESSAGES = [
         "msgstr": "test append msgid",
         "comment": "comment_4",
         "flags": [],
-        "occurrences": [("dir_1/file_1.py", '4')],
+        "occurrences": [("dir_1/file_1.py", '5')],
     }
 ]
 
@@ -148,11 +154,11 @@ RESULT_OVERWRITE_MESSAGES = [
         "occurrences": [("dir_1/file_1.py", '2')],
     },
     {
-        "msgid": "测试覆盖新增msgid",
-        "msgstr": "test overwrite msgid",
-        "comment": "",
+        "msgid": "测试msgid",
+        "msgstr": "new test msgid",
+        "comment": "comment_2",
         "flags": [],
-        "occurrences": [],
+        "occurrences": [("dir_1/file_1.py", '3')],
     },
 ]
 
@@ -172,6 +178,13 @@ RESULT_UPDATE_MESSAGES = [
         "comment": "comment_2",
         "flags": [],
         "occurrences": [("dir_1/file_1.py", '2')],
+    },
+    {
+        "msgid": "测试msgid",
+        "msgstr": "test msgid",
+        "comment": "comment_2",
+        "flags": [],
+        "occurrences": [("dir_1/file_1.py", '3')],
     },
 ]
 

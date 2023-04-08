@@ -28,6 +28,11 @@ msgstr ""
 msgid "测试msgid"
 msgstr "test msgid"
 
+#. comment_2
+#: dir_1/file_1.py:3
+msgid "测试msgid"
+msgstr "test msgid"
+
 #. comment_3
 #~ msgid "测试删除msgid"
 #~ msgstr "test delete msgid"

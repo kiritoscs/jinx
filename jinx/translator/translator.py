@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from jinx.common import PoUtil, Prompt
 from jinx.common.config import config_util
 from jinx.common.constants import TranslatorModeEnum, TranslatorProviderEnum
+from jinx.common.token import Token
 from jinx.common.utils import read_file
 from jinx.config import language
 from jinx.translator.provider import Provider
@@ -56,25 +57,36 @@ class TranslatorTool:
             self.official_dict = {}
             return
         try:
-            self.official_dict = read_file(fp=self.official_dict_path, is_json=True)
+            if os.path.isdir(self.official_dict_path):
+                for file in os.listdir(self.official_dict_path):
+                    if file.endswith(".json"):
+                        self.official_dict.update(
+                            read_file(fp=os.path.join(self.official_dict_path, file), is_json=True)
+                        )
+            else:
+                self.official_dict = read_file(fp=self.official_dict_path, is_json=True)
         except Exception as e:
-            Prompt.panic("官方词典文件{official_dict_path}格式错误: {e}", official_dict_path=self.official_dict_path, e=e)
+            Prompt.panic(
+                "Failed to Parse official dict: {official_dict_path}: {e}",
+                official_dict_path=self.official_dict_path,
+                e=e,
+            )
 
     def _init_client(self):
         if self.mode == TranslatorModeEnum.UPDATE:
-            contents = [entry.msgid for entry in self.po_file.po if entry.msgstr == ""]
+            tokens = [Token.create_from_po_entry(entry) for entry in self.po_file.read_list() if not entry.msgstr]
         else:
-            contents = self.po_file.msgid_list
+            tokens = [Token.create_from_po_entry(entry) for entry in self.po_file.read_list()]
         self._client = Provider.get_instance(
             source_lang=language.current,
             dest_lang=language.dest,
             official_dict=self.official_dict,
             provider=translator_config.provider,
-            contents=contents,
+            tokens=tokens,
         )
 
     def handle(self):
         # 翻译
-        self._client.translate()
+        self._client.batch_translate()
         # 写入po文件
-        self.po_file.write(data=self._client.result, mode=self.mode)
+        self.po_file.write(mode=self.mode, tokens=self._client.result)

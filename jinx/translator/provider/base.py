@@ -3,6 +3,9 @@ from dataclasses import dataclass
 
 from rich.progress import track
 
+from jinx.common import Prompt
+from jinx.common.token import Token
+
 
 @dataclass
 class MatchResult:
@@ -42,18 +45,19 @@ class TranslatorBase:
         source_lang: str,
         dest_lang: str,
         official_dict: typing.Dict[str, str] = None,
-        contents: typing.List[str] = None,
+        tokens: typing.List[Token] = None,
     ):
         self._source_lang = source_lang
         self._dest_lang = dest_lang
         self._official_dict = official_dict if official_dict else {}
-        self._contents = contents
-        self._result: typing.Dict[str, str] = {}
+        self._tokens = tokens
+        self._translated_msgid_list: typing.List[str] = []
+        self._translated_tokens: typing.List[Token] = []
 
     @property
-    def result(self) -> typing.Dict[str, str]:
+    def result(self) -> typing.List[Token]:
         """翻译结果"""
-        return self._result
+        return self._translated_tokens
 
     def pre_translate(self, content: str) -> MatchResult:
         """预翻译, 即匹配官方词典"""
@@ -63,9 +67,21 @@ class TranslatorBase:
         """翻译单个语句, 各个翻译接口/Client需要实现该方法"""
         raise NotImplementedError
 
-    def translate(self) -> None:
+    def translate(self, token: Token) -> Token:
+        match_result = self.pre_translate(token.msgid)
+        if match_result.full_match:
+            token.msgstr = match_result.content
+        else:
+            Prompt.debug(f"Translating: {token.msgid}")
+            token.msgstr = self.translate_once(match_result.content)
+        return token
+
+    def batch_translate(self) -> None:
         """翻译, 如果有API/Client支持批量翻译, 可以重写该方法"""
-        for content in track(self._contents, description="翻译中..."):
-            if content in self._result:
+        self._translated_msgid_list = []
+        self._translated_tokens = []
+        for token in track(self._tokens, description="Translating..."):
+            if token.msgid in self._translated_msgid_list:
                 continue
-            self._result[content] = self.translate_once(content)
+            self._translated_tokens.append(self.translate(token))
+            self._translated_msgid_list.append(token.msgid)
