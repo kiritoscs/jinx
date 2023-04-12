@@ -123,6 +123,27 @@ def exporter(locale_path, export_path):
     ExportTool(locale_path=locale_path, export_path=export_path).handle()
 
 
+@cli.command(help="Write your final entry to django.po")
+@click.option(
+    "--locale_path",
+    "-p",
+    type=click.Path(exists=True),
+    required=True,
+    help="Your django project locale path or django.po file path which you want to translate",
+)
+@click.option(
+    "--final_entry_path",
+    "-o",
+    type=str,
+    required=False,
+    help="Your final entry file/dir, if not a file, will merge all json file in this directory",
+)
+def importer(locale_path, final_entry_path):
+    from jinx.importer import Importer
+
+    Importer(locale_path=locale_path, final_entry_path=final_entry_path).handle()
+
+
 @cli.command(help="Simple way to compile po to mo without django-admin")
 @click.option(
     "--locale_path",

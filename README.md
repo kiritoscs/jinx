@@ -19,7 +19,7 @@ Django国际化常常包含以下流程
 2. [提取词条](#2提取词条) 由[Extractor](jinx/extractor/README.md)负责, 或者 利用Django自带makemessages命令进行词条提取
 3. [机器翻译词条](#3机器翻译词条) 由[Translator](jinx/translator/README.md)负责
 4. [人工检验词条](#4人工检验词条) 由[Exporter](jinx/exporter/README.md)导出json文件, 交付给负责人
-5. [将确认无误的词条写入po文件](#5将确认无误的词条写入po文件) 由[Translator](jinx/translator/README.md)负责
+5. [将确认无误的词条写入po文件](#5将确认无误的词条写入po文件) 由[Importer](jinx/importer/README.md)负责
 6. [编译](#6编译) 由[Compiler](jinx/compiler/README.md)负责, 或者 利用Django自带compilemessages命令进行编译
 
 
@@ -39,6 +39,8 @@ poetry install
 参考[pyproject.toml](pyproject.toml)里的`[tool.poetry.dependencies]`
 
 ### 生成配置文件
+第一次运行时, 会提示你是否根据模板生成配置文件, 选择`yes`即可
+
 ```bash
 mv jinx.template.toml jinx.toml
 ```
@@ -97,10 +99,11 @@ python jinx.py exporter -l ${YOUR_PO_FILE} -e ${YOUR_OUTPUT_DIR}
 
 ### 5.将确认无误的词条写入po文件
 ```bash
-python jinx.py translator -p ${YOUR_PO_FILE} -o ${YOUR_FINAL_JSON_FILE} -m overwrite
+python jinx.py -c ${CONFIG_PATH} importer -p ${PO_PATH} -o {$YOUR_FINAL_DICT_PATH}
 ```
-- YOUR_PO_FILE: 你的po文件目录, 也支持填入locale目录, 会自动寻找locale目录下的对应语言po文件
-- YOUR_FINAL_JSON_FILE: 你的最终json文件, 用于更新po文件
+- CONFIG_PATH: 配置文件路径, 默认为: jinx/jinx.toml
+- PO_PATH: 需要翻译的po文件路径, 例如: ${project_path}/locale/en/LC_MESSAGES/django.po
+- YOUR_FINAL_DICT_PATH: 产品核对之后的JSON文件路径, 支持指定目录搜索目录下的json文件, 例如: jinx/official_dict.json
 
 ### 6.编译
 **PlanA**: 利用compiler编译

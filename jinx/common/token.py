@@ -59,7 +59,7 @@ class Token:
             tokens.append(
                 Token(
                     msgid=key,
-                    msgstr=value.get("msgstr", ""),
+                    msgstr=value,
                 )
             )
         return tokens

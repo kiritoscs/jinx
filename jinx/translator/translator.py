@@ -92,5 +92,5 @@ class TranslatorTool:
     def handle(self):
         # 翻译
         self._client.batch_translate()
-        # 写入po文件
+        # # 写入po文件
         self.po_file.write(mode=self.mode, tokens=self._client.result)
