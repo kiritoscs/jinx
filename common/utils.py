@@ -2,6 +2,7 @@
 This file contains utility functions for the project.
 """
 import json
+import json5
 import os
 import typing
 from importlib import import_module
@@ -46,12 +47,12 @@ def read_file(fp: str, encoding: str = None, is_json: bool = False):
     try:
         with open(fp, encoding=DEFAULT_ENCODING) as f:
             if is_json:
-                return json.load(f)
+                return json5.load(f)
             return f.read()
     except Exception:  # pylint: disable=broad-except
         with open(fp, encoding=encoding) as f:
             if is_json:
-                return json.load(f)
+                return json5.load(f)
             return f.read()
 
 

@@ -195,6 +195,8 @@ class TranslatorModeEnum(EnhanceEnum):
     OVERWRITE = "overwrite"
     # 更新翻译
     UPDATE = "update"
+    # 完全匹配翻译
+    FULL_MATCH = "full_match"
 
 
 class YouDaoSupportDomainEnum(EnhanceEnum):

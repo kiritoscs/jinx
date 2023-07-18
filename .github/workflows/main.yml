@@ -1,0 +1,19 @@
+name: "[Jinx] Unittest"
+
+defaults:
+  run:
+    working-directory: tests
+
+on:
+  push:
+  pull_request:
+jobs:
+  run:
+    runs-on: self-hosted
+    container:
+      image: python:3.6.8
+    steps:
+    - uses: actions/checkout@v2
+    - name: Run Test
+      run: |
+        python -V

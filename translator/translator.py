@@ -61,6 +61,8 @@ class TranslatorTool:
             Prompt.panic("官方词典文件{official_dict_path}格式错误: {e}", official_dict_path=self.official_dict_path, e=e)
 
     def _init_client(self):
+        if self.mode == TranslatorModeEnum.FULL_MATCH:
+            return
         if self.mode == TranslatorModeEnum.UPDATE:
             contents = [entry.msgid for entry in self.po_file.po if entry.msgstr == ""]
         else:
@@ -74,7 +76,19 @@ class TranslatorTool:
         )
 
     def handle(self):
+        if self.mode == TranslatorModeEnum.FULL_MATCH:
+            self._full_match()
+            return
         # 翻译
         self._client.translate()
         # 写入po文件
         self.po_file.write(data=self._client.result, mode=self.mode)
+
+    def _full_match(self):
+        Prompt.info("开始同步词条")
+        for entry in self.po_file.po:
+            if entry.msgid not in self.official_dict:
+                continue
+            entry.msgstr = self.official_dict[entry.msgid]
+        self.po_file.po.save(self.po_file.po_file_path)
+        Prompt.info("完成同步词条")
