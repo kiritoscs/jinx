@@ -22,5 +22,5 @@ jobs:
         python -V
         pip install pytest
         pwd
-        source ./env.sh
+        source tests/env.sh
         echo ${JINX_DEV_MODE}
