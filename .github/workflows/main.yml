@@ -17,3 +17,5 @@ jobs:
     - name: Run Test
       run: |
         python -V
+        pip install pytest
+        uptime
