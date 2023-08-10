@@ -13,6 +13,7 @@ jobs:
     defaults:
       run:
         shell: bash
+        working-directory: tests
     container:
       image: python:3.6.8
     steps:
@@ -21,6 +22,6 @@ jobs:
       run: |
         python -V
         pip install pytest
-        pwd
-        source tests/env.sh
+        ls -alth
+        source ./env.sh
         echo ${JINX_DEV_MODE}
