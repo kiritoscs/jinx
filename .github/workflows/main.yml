@@ -21,7 +21,10 @@ jobs:
     - name: Run Test
       run: |
         python -V
-        pip install pytest
+        pip install coverage
+        pip uninstall pycrypto -y
+        pip uninstall pycryptodome -y
+        pip install pycryptodome
         ls -alth
         source ./env.sh
         echo ${JINX_DEV_MODE}
