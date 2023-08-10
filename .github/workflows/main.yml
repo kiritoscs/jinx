@@ -10,6 +10,9 @@ on:
 jobs:
   run:
     runs-on: self-hosted
+    defaults:
+      run:
+        shell: bash
     container:
       image: python:3.6.8
     steps:
