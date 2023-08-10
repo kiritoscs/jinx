@@ -22,3 +22,5 @@ jobs:
         python -V
         pip install pytest
         uptime
+        source ./env.sh
+        echo ${JINX_DEV_MODE}
