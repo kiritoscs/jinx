@@ -87,7 +87,7 @@ config_util = ConfigUtil(config_path=_config_path)
 
 language = LanguageConfig(
     current=config_util.get("language.current", LanguageEnum.Chinese),
-    dest=config_util.get("language.target", LanguageEnum.English),
+    dest=config_util.get("language.dest", LanguageEnum.English),
 )
 
 # 只允许其他模块导入__all__中的变量

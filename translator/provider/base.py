@@ -1,7 +1,8 @@
+from concurrent.futures import ThreadPoolExecutor, wait
 import typing
 from dataclasses import dataclass
 
-from rich.progress import track
+from common.prompt import Prompt
 
 
 @dataclass
@@ -64,8 +65,14 @@ class TranslatorBase:
         raise NotImplementedError
 
     def translate(self) -> None:
-        """翻译, 如果有API/Client支持批量翻译, 可以重写该方法"""
-        for content in track(self._contents, description="翻译中..."):
-            if content in self._result:
-                continue
-            self._result[content] = self.translate_once(content)
+        """默认使用多线程逐句翻译, 如果有API/Client支持批量翻译, 可以重写该方法"""
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            futures = [executor.submit(self._translate_and_log, content) 
+                       for content in self._contents 
+                       if content not in self._result]
+            wait(futures)
+
+    def _translate_and_log(self, content: str) -> None:
+        """翻译并打印日志"""
+        self._result[content] = self.translate_once(content)
+        Prompt.info(f"origin: {content}, translated: {self._result[content]}")

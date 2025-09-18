@@ -34,7 +34,7 @@ exclude_files = [
 [marker.translation_func]
 # 默认的翻译函数配置
 ## 默认的翻译函数
-default = "ugettext_lazy"
+default = "gettext_lazy"
 ## 翻译函数别名
 alias = "_"
 
