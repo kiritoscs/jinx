@@ -140,3 +140,16 @@ pytest -q
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+
+## Performance & advanced marker options
+
+```toml
+[marker]
+fstring_style = "named"   # or "positional"
+workers = 4               # parallel file marking
+
+[marker.templates]
+ensure_load_i18n = true
+use_blocktrans_for_vars = true
+```

@@ -18,6 +18,7 @@ from jinx.common.utils import (
     write_file,
 )
 from jinx.marker.fstring import convert_joined_str, render_expr
+from jinx.marker.import_merge import ensure_translation_import
 from jinx.marker.plugins.file_filter import get_file_filter
 from jinx.marker.plugins.str_conditions import StrCondition
 from jinx.marker.result import FileMarkResult, MarkerRunResult
@@ -34,14 +35,26 @@ from jinx.marker.utils.translation_func import (
 class MarkerConfig:
     strict_mode: bool = False
     convert_fstring: bool = True
+    fstring_style: str = "named"  # named | positional
+    workers: int = 1
     suffixes: list[str] = field(default_factory=lambda: [".py", ".html"])
 
 
 def get_marker_config() -> MarkerConfig:
     raw_suffixes = config_util.get("marker.suffixes", [".py", ".html"]) or [".py", ".html"]
+    workers = config_util.get("marker.workers", 1)
+    try:
+        workers = int(workers or 1)
+    except (TypeError, ValueError):
+        workers = 1
+    style = str(config_util.get("marker.fstring_style", "named") or "named").lower()
+    if style not in {"named", "positional"}:
+        style = "named"
     return MarkerConfig(
         strict_mode=bool(config_util.get("marker.strict_mode", False)),
         convert_fstring=bool(config_util.get("marker.convert_fstring", True)),
+        fstring_style=style,
+        workers=max(1, workers),
         suffixes=list(raw_suffixes),
     )
 
@@ -106,6 +119,7 @@ class _CollectMarker(ast.NodeVisitor):
         alias_name: str,
         filepath: str,
         convert_fstring: bool,
+        fstring_style: str = "named",
     ) -> None:
         self.source = source
         self.source_lines = source_lines
@@ -113,6 +127,7 @@ class _CollectMarker(ast.NodeVisitor):
         self.alias_name = alias_name
         self.filepath = filepath
         self.convert_fstring = convert_fstring
+        self.fstring_style = fstring_style
         self.tokens: list[Token] = []
         self.illegal_tokens: list[Token] = []
         self.edits: list[_Edit] = []
@@ -171,7 +186,7 @@ class _CollectMarker(ast.NodeVisitor):
             self.generic_visit(node)
             return
         if self.convert_fstring:
-            result = convert_joined_str(node, self.alias_name)
+            result = convert_joined_str(node, self.alias_name, style=self.fstring_style)
             if result.ok and result.node is not None:
                 span = _node_span(self.source, node)
                 if span is not None:
@@ -250,55 +265,9 @@ class _CollectMarker(ast.NodeVisitor):
 
 
 def _ensure_import_text(source: str, default_func: DjangoTranslationFunc) -> str | None:
-    """Return new source with translation import inserted, or None if already present."""
-    try:
-        tree = ast.parse(source)
-    except SyntaxError:
-        return None
-    existing = parse_translation_funcs_from_ast(tree)
-    wanted = {default_func.func_name, default_func.alias_name}
-    for func in existing:
-        if func.alias_name in wanted or func.func_name in wanted:
-            return None
-    import_line = (
-        f"from django.utils.translation import {default_func.func_name} as {default_func.alias_name}\n"
-    )
-    lines = source.splitlines(keepends=True)
-    if not lines:
-        return import_line + source
-    insert_at = 0
-    while insert_at < len(lines) and (
-        lines[insert_at].startswith("#!")
-        or (lines[insert_at].startswith("#") and "coding" in lines[insert_at])
-    ):
-        insert_at += 1
-    try:
-        mod = ast.parse(source)
-        if (
-            mod.body
-            and isinstance(mod.body[0], ast.Expr)
-            and isinstance(mod.body[0].value, ast.Constant)
-            and isinstance(mod.body[0].value.value, str)
-        ):
-            end = mod.body[0].end_lineno or 1
-            insert_at = max(insert_at, end)
-    except SyntaxError:
-        pass
-    idx = insert_at
-    while idx < len(lines):
-        stripped = lines[idx].lstrip()
-        if stripped.startswith("from __future__"):
-            idx += 1
-            continue
-        break
-    while idx < len(lines):
-        stripped = lines[idx].lstrip()
-        if stripped.startswith("import ") or stripped.startswith("from "):
-            idx += 1
-            continue
-        break
-    lines.insert(idx, import_line)
-    return "".join(lines)
+    """Merge or insert django.utils.translation import (see import_merge)."""
+    return ensure_translation_import(source, default_func)
+
 
 
 class FileMarker:
@@ -342,6 +311,7 @@ class FileMarker:
             alias_name=default.alias_name,
             filepath=self._fp,
             convert_fstring=cfg.convert_fstring,
+            fstring_style=cfg.fstring_style,
         )
         collector.visit(tree)
         return collector
@@ -401,6 +371,7 @@ class FileMarker:
         return result
 
 
+
 class MarkerTool:
     def __init__(self, target_path: str | None = None) -> None:
         self._target_path = target_path or ""
@@ -431,14 +402,17 @@ class MarkerTool:
         dry_run: bool = False,
         check_only: bool = False,
     ) -> MarkerRunResult:
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
         from jinx.marker.template_marker import TemplateMarkerTool
 
         cfg = get_marker_config()
         run = MarkerRunResult(dry_run=dry_run or check_only, check_only=check_only)
+        files = self.files
 
         if only_extract_tokens:
             tokens: list[Token] = []
-            for file in self.files:
+            for file in files:
                 handler = FileMarker(file)
                 fr = handler.handle(only_extract_tokens=True)
                 tokens.extend(fr.tokens)
@@ -456,9 +430,24 @@ class MarkerTool:
             return run
 
         effective_dry = dry_run or check_only
-        desc = "Checking..." if check_only else ("Dry-run marking..." if dry_run else "Marking Python...")
-        for file in track(self.files, description=desc):
-            fr = FileMarker(file).handle(dry_run=effective_dry)
+        workers = 1 if effective_dry else cfg.workers
+
+        def _mark_one(path: str) -> FileMarkResult:
+            return FileMarker(path).handle(dry_run=effective_dry)
+
+        results: list[FileMarkResult] = []
+        if workers <= 1:
+            desc = "Checking..." if check_only else ("Dry-run marking..." if dry_run else "Marking Python...")
+            for file in track(files, description=desc):
+                results.append(_mark_one(file))
+        else:
+            Prompt.info("Marking with {n} workers", n=workers)
+            with ThreadPoolExecutor(max_workers=workers) as executor:
+                futs = {executor.submit(_mark_one, f): f for f in files}
+                for fut in track(as_completed(futs), total=len(futs), description="Marking Python..."):
+                    results.append(fut.result())
+
+        for fr in results:
             run.file_results.append(fr)
             run.files_scanned += 1
             run.token_count += len(fr.tokens)
@@ -478,7 +467,6 @@ class MarkerTool:
             if not effective_dry:
                 TemplateMarkerTool(self._target_path).handle()
             else:
-                # extract-only for templates in dry/check
                 ttokens = TemplateMarkerTool(self._target_path).tokens
                 run.token_count += len(ttokens)
 
@@ -493,3 +481,4 @@ class MarkerTool:
         )
         self.last_result = run
         return run
+

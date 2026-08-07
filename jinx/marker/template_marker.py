@@ -15,35 +15,29 @@ from jinx.marker.plugins.file_filter import get_file_filter
 from jinx.marker.plugins.str_conditions import StrCondition
 from jinx.marker.utils.token import Token, TokenPoint
 
-# Already wrapped or translation tags — skip
-_SKIP_NEAR = re.compile(
-    r"""
-    \{%\s*(?:trans|translate|blocktrans|blocktranslate)\b
-    | \{\{\s*
-    | \{# 
-    | <!--
-    """,
-    re.VERBOSE,
-)
-
-# Capture plain double/single quoted string literals in template tags attributes-ish text
-# and free Chinese runs that look like user-facing copy inside tags' text nodes.
 _QUOTED = re.compile(r"""(?P<q>["'])(?P<body>(?:(?!(?P=q)).)*)(?P=q)""")
-_TEXT_CHUNK = re.compile(
-    r">(?P<body>[^<>{%]{1,200}?)<",
+_TEXT_CHUNK = re.compile(r">(?P<body>[^<>]{1,300}?)<")
+# Text node that mixes copy + Django vars: 你好{{ name }}啊
+_MIXED_TEXT = re.compile(
+    r">(?P<body>(?:[^<>{]|\{(?!%)|\*(?!\}))+?\{\{[^}]+\}\}(?:[^<>{]|\{(?!%)|\*(?!\}))*?)<"
 )
+_LOAD_I18N = re.compile(r"\{%\s*load\s+([^%]*\bi18n\b[^%]*)%\}")
 
 
 @dataclass
 class TemplateMarkerConfig:
     enabled: bool = True
     wrap_tag: str = "trans"  # trans | translate
+    ensure_load_i18n: bool = True
+    use_blocktrans_for_vars: bool = True
 
 
 def get_template_config() -> TemplateMarkerConfig:
     return TemplateMarkerConfig(
         enabled=bool(config_util.get("marker.templates.enabled", True)),
         wrap_tag=str(config_util.get("marker.templates.wrap_tag", "trans") or "trans"),
+        ensure_load_i18n=bool(config_util.get("marker.templates.ensure_load_i18n", True)),
+        use_blocktrans_for_vars=bool(config_util.get("marker.templates.use_blocktrans_for_vars", True)),
     )
 
 
@@ -55,11 +49,25 @@ def _line_col(source: str, index: int) -> tuple[int, int]:
 
 
 def _already_in_trans(source: str, start: int) -> bool:
-    window = source[max(0, start - 80) : start]
+    window = source[max(0, start - 100) : start]
     return bool(
         re.search(r"""\{%\s*(?:trans|translate|blocktrans|blocktranslate)\b""", window)
         or re.search(r"""\{%\s*(?:trans|translate)\s+["']""", window)
     )
+
+
+def _ensure_load_i18n(source: str) -> str:
+    if _LOAD_I18N.search(source):
+        return source
+    # After DOCTYPE / <html> / first line
+    insert = "{% load i18n %}\n"
+    m = re.search(r"(<!DOCTYPE[^>]*>\s*)", source, re.I)
+    if m:
+        return source[: m.end()] + insert + source[m.end() :]
+    m = re.search(r"(<html[^>]*>\s*)", source, re.I)
+    if m:
+        return source[: m.end()] + insert + source[m.end() :]
+    return insert + source
 
 
 class TemplateFileMarker:
@@ -78,104 +86,100 @@ class TemplateFileMarker:
         return self._tokens
 
     def _match_language(self, text: str) -> bool:
-        return StrCondition(token_text=text, source_line=text, language_re=language.re).match()
+        # strip django vars for language check
+        stripped = re.sub(r"\{\{[^}]+\}\}", "", text)
+        stripped = re.sub(r"\{%[^%]+%\}", "", stripped)
+        return StrCondition(token_text=stripped or text, source_line=text, language_re=language.re).match()
+
+    def _token(self, text: str, start: int) -> Token:
+        line, col = _line_col(self._source if False else self._source, start)
+        # use current source positions; caller may use original indices
+        line, col = _line_col(self._source, start) if start < len(self._source) else (1, 0)
+        return Token(
+            type=tokenize.STRING,
+            token=text.strip(),
+            start_at=TokenPoint(row=line, col=col),
+            end_at=TokenPoint(row=line, col=col + len(text)),
+            source_line=text.strip(),
+        )
 
     def _collect(self, write: bool) -> str:
         source = self._source
         tokens: list[Token] = []
         replacements: list[tuple[int, int, str]] = []
 
-        # 1) quoted strings that contain target language (e.g. title="你好")
+        # 1) Mixed text with {{ var }} → blocktrans
+        if self._cfg.use_blocktrans_for_vars:
+            for m in _MIXED_TEXT.finditer(source):
+                body = m.group("body")
+                text = body.strip()
+                if not text or not self._match_language(text):
+                    continue
+                if "{%" in body:
+                    continue
+                abs_start = m.start("body") + body.index(text) if text in body else m.start("body")
+                abs_end = abs_start + len(text)
+                if _already_in_trans(source, abs_start):
+                    continue
+                tokens.append(self._token(text, abs_start))
+                wrapped = f"{{% blocktrans %}}{text}{{% endblocktrans %}}"
+                replacements.append((abs_start, abs_end, wrapped))
+
+        # 2) quoted attribute strings
         for m in _QUOTED.finditer(source):
             body = m.group("body")
             if not body or not self._match_language(body):
                 continue
             if _already_in_trans(source, m.start()):
-                # extract only
-                line, col = _line_col(source, m.start())
-                tokens.append(
-                    Token(
-                        type=tokenize.STRING,
-                        token=body,
-                        start_at=TokenPoint(row=line, col=col),
-                        end_at=TokenPoint(row=line, col=col + len(body)),
-                        source_line=body,
-                    )
-                )
+                tokens.append(self._token(body, m.start()))
                 continue
-            # skip if inside {% %} or {{ }} already partially handled
-            before = source[max(0, m.start() - 2) : m.start()]
-            if "{%" in source[max(0, m.start() - 40) : m.start()] and "%}" in source[m.end() : m.end() + 40]:
-                # quoted arg of a template tag — if not trans, still candidate for msgid extract
-                line, col = _line_col(source, m.start())
-                tokens.append(
-                    Token(
-                        type=tokenize.STRING,
-                        token=body,
-                        start_at=TokenPoint(row=line, col=col),
-                        end_at=TokenPoint(row=line, col=col + len(body)),
-                        source_line=body,
-                    )
-                )
+            before = source[max(0, m.start() - 40) : m.start()]
+            if "{%" in before and "%}" in source[m.end() : m.end() + 40]:
+                tokens.append(self._token(body, m.start()))
                 continue
-
-            line, col = _line_col(source, m.start())
-            tokens.append(
-                Token(
-                    type=tokenize.STRING,
-                    token=body,
-                    start_at=TokenPoint(row=line, col=col),
-                    end_at=TokenPoint(row=line, col=col + len(body)),
-                    source_line=body,
-                )
-            )
-            # Attribute values: title="{% trans '你好' %}" pattern
+            # skip if inside blocktrans already handled
+            if any(s <= m.start() < e for s, e, _ in replacements):
+                continue
+            tokens.append(self._token(body, m.start()))
             q = m.group("q")
             wrap = self._cfg.wrap_tag
-            # use opposite quotes inside tag
             inner_q = "'" if q == '"' else '"'
             new = f"{q}{{% {wrap} {inner_q}{body}{inner_q} %}}{q}"
             replacements.append((m.start(), m.end(), new))
 
-        # 2) text nodes between tags: >中文<
+        # 3) plain text nodes without vars
         for m in _TEXT_CHUNK.finditer(source):
             body = m.group("body")
             text = body.strip()
             if not text or not self._match_language(text):
                 continue
-            # skip pure whitespace-heavy with scripts
-            if "{%" in body or "{{" in body:
+            if "{{" in body or "{%" in body:
                 continue
             abs_start = m.start("body") + (body.index(text) if text in body else 0)
             abs_end = abs_start + len(text)
             if _already_in_trans(source, abs_start):
                 continue
-            line, col = _line_col(source, abs_start)
-            tokens.append(
-                Token(
-                    type=tokenize.STRING,
-                    token=text,
-                    start_at=TokenPoint(row=line, col=col),
-                    end_at=TokenPoint(row=line, col=col + len(text)),
-                    source_line=text,
-                )
-            )
+            if any(not (abs_end <= s or abs_start >= e) for s, e, _ in replacements):
+                continue
+            tokens.append(self._token(text, abs_start))
             wrap = self._cfg.wrap_tag
-            replacements.append((abs_start, abs_end, f"{{% {wrap} \"{text}\" %}}"))
+            replacements.append((abs_start, abs_end, f'{{% {wrap} "{text}" %}}'))
 
         self._tokens = tokens
         if not write or not replacements:
-            return source
+            out = source
+        else:
+            replacements.sort(key=lambda x: x[0], reverse=True)
+            out = source
+            last = len(out) + 1
+            for start, end, text in replacements:
+                if end > last:
+                    continue
+                out = out[:start] + text + out[end:]
+                last = start
 
-        # apply from end
-        replacements.sort(key=lambda x: x[0], reverse=True)
-        out = source
-        last = len(out) + 1
-        for start, end, text in replacements:
-            if end > last:
-                continue
-            out = out[:start] + text + out[end:]
-            last = start
+        if write and tokens and self._cfg.ensure_load_i18n:
+            out = _ensure_load_i18n(out)
         return out
 
     def handle(self, only_extract_tokens: bool = False) -> None:

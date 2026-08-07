@@ -13,6 +13,7 @@ def test_wraps_text_node(clean_config, tmp_path: Path) -> None:
     TemplateFileMarker(str(html)).handle()
     content = html.read_text(encoding="utf-8")
     assert '{% trans "欢迎使用" %}' in content or "{% trans '欢迎使用' %}" in content
+    assert "{% load i18n %}" in content
 
 
 def test_wraps_attribute(clean_config, tmp_path: Path) -> None:
@@ -24,12 +25,21 @@ def test_wraps_attribute(clean_config, tmp_path: Path) -> None:
     assert "提交订单" in content
 
 
+def test_blocktrans_with_var(clean_config, tmp_path: Path) -> None:
+    html = tmp_path / "a.html"
+    html.write_text("<p>你好{{ name }}，欢迎</p>\n", encoding="utf-8")
+    TemplateFileMarker(str(html)).handle()
+    content = html.read_text(encoding="utf-8")
+    assert "blocktrans" in content
+    assert "{{ name }}" in content
+    assert "{% load i18n %}" in content
+
+
 def test_skips_already_trans(clean_config, tmp_path: Path) -> None:
     html = tmp_path / "a.html"
     original = '<h1>{% trans "欢迎使用" %}</h1>\n'
     html.write_text(original, encoding="utf-8")
     TemplateFileMarker(str(html)).handle()
-    # should not double-wrap
     assert html.read_text(encoding="utf-8").count("trans") == 1
 
 

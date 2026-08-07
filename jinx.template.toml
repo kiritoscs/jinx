@@ -11,6 +11,10 @@ dest = "en"
 strict_mode = false
 # Convert f"中文{x}" → _("中文{}").format(x)
 convert_fstring = true
+# named (Django) | positional
+fstring_style = "named"
+# parallel file workers for large trees
+workers = 4
 # File suffixes to process (.py always; .html enables Django template marking)
 suffixes = [".py", ".html"]
 
@@ -18,6 +22,8 @@ suffixes = [".py", ".html"]
 enabled = true
 # trans | translate
 wrap_tag = "trans"
+ensure_load_i18n = true
+use_blocktrans_for_vars = true
 
 [marker.filter]
 # Segment names, exact file names, or globs (e.g. "**/static/**", "*.pyc")
