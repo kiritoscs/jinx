@@ -1,0 +1,93 @@
+################################################## Global ##################################################
+[language]
+# Project source language (see jinx.common.constants.LanguageEnum)
+current = "zh-CN"
+# Translation target language
+dest = "en"
+
+################################################## Marker ##################################################
+[marker]
+# Skip entire file when unsupported f-strings remain after conversion
+strict_mode = false
+# Convert f"中文{x}" → _("中文{}").format(x)
+convert_fstring = true
+# named (Django) | positional
+fstring_style = "named"
+# parallel file workers for large trees
+workers = 4
+# File suffixes to process (.py always; .html enables Django template marking)
+suffixes = [".py", ".html"]
+
+[marker.templates]
+enabled = true
+# trans | translate
+wrap_tag = "trans"
+ensure_load_i18n = true
+use_blocktrans_for_vars = true
+
+[marker.filter]
+# Segment names, exact file names, or globs (e.g. "**/static/**", "*.pyc")
+exclude_paths = [
+    "web",
+    "scripts",
+    "migrations",
+    "tests",
+]
+exclude_files = [
+    "manage.py",
+    "urls.py",
+    "wsgi.py",
+    "tests.py",
+]
+
+[marker.translation_func]
+default = "gettext_lazy"
+alias = "_"
+
+[marker.str_conditions.token]
+contains = []
+not_contains = []
+startswith = []
+not_startswith = []
+endswith = []
+not_endswith = ["\"\"\"", "'''"]
+
+[marker.str_conditions.source_line]
+contains = []
+not_contains = ["logger", "__name__"]
+startswith = []
+not_startswith = []
+endswith = []
+not_endswith = ["\"\"\"", "'''"]
+
+################################################## Translator ##################################################
+[translator]
+provider = "google_api"
+mode = "update"
+
+[translator.google]
+retries = 3
+backoff = 0.8
+
+[youdao_client]
+url = "https://openapi.youdao.com/api"
+app_key = ""
+app_secret = ""
+# general | computers | medicine | finance
+domain = "general"
+
+
+[marker.skip]
+# Skip strings shorter than this (codepoints)
+min_length = 2
+max_length = 500
+# Skip short CJK when assigned to name-like variables
+skip_if_only_cjk_name_like = true
+name_like_max_len = 4
+skip_assign_names = ["name", "username", "id", "pk", "slug", "code", "key", "token"]
+skip_exact = ["utf-8", "utf8", "ascii"]
+
+[po]
+# Backup django.po before write; keep last N backups
+backup = true
+backup_keep = 5

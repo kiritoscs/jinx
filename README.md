@@ -14,6 +14,22 @@ Jinx is a one-stop **Django i18n helper**: mark strings, extract entries, machin
 ## Install
 
 ```bash
+pip install django-jinx   # when published
+# or from source:
+pip install -e ".[dev]"
+jinx --version
+```
+
+```bash
+jinx init                 # write jinx.toml
+jinx status -t ./project -l ./locale
+jinx marker -t ./project -j 4
+jinx plural-snippet -s '{count} item' -p '{count} items'
+```
+
+## Install (source)
+
+```bash
 # from source
 git clone https://github.com/kiritoscs/jinx
 cd jinx

@@ -8,7 +8,8 @@ from pathlib import Path
 
 import click
 
-from jinx.common.config import init_config
+from jinx import __version__
+from jinx.common.config import config_util, get_config_util, init_config
 from jinx.common.prompt import Prompt
 from jinx.common.validate import validate_config
 from jinx.compiler import CompileTool
@@ -25,7 +26,18 @@ def _default_config_path() -> str:
     return str(Path(__file__).resolve().parents[1] / "jinx.toml")
 
 
+def _maybe_validate(no_validate: bool, config_path: str, *, require_file: bool = False) -> None:
+    if no_validate:
+        return
+    if require_file and not Path(config_path).is_file():
+        return
+    if Path(config_path).is_file() or not require_file:
+        # defaults are valid even without a file
+        validate_config()
+
+
 @click.group(help="Jinx — one-stop Django i18n helper")
+@click.version_option(__version__, prog_name="jinx")
 @click.option(
     "-c",
     "--config-path",
@@ -45,28 +57,47 @@ def cli(ctx: click.Context, config_path: str | None, no_validate: bool) -> None:
         str(Path(path).resolve().parent if Path(path).exists() else Path.cwd()),
     )
     init_config(path if Path(path).is_file() else None)
-    if not no_validate:
-        validate_config()
     ctx.ensure_object(dict)
     ctx.obj["config_path"] = path
+    ctx.obj["no_validate"] = no_validate
+
+
+@cli.command("init", help="Create jinx.toml from the bundled template")
+@click.option("--output", "-o", type=click.Path(), default="jinx.toml", show_default=True)
+@click.option("--force", is_flag=True, default=False, help="Overwrite existing file")
+def init_cmd(output: str, force: bool) -> None:
+    from jinx.commands.init_cmd import init_config_file
+
+    init_config_file(Path(output), force=force)
+
+
+@cli.command("status", help="Report pending marks, PO gaps, and plural hints")
+@click.option("--target-path", "-t", type=click.Path(exists=True), required=True)
+@click.option("--locale-path", "-l", type=click.Path(exists=True), required=False)
+@click.pass_context
+def status_cmd(ctx: click.Context, target_path: str, locale_path: str | None) -> None:
+    from jinx.commands.status_cmd import run_status
+
+    _maybe_validate(ctx.obj["no_validate"], ctx.obj["config_path"], require_file=True)
+    sys.exit(run_status(target_path, locale_path))
 
 
 @cli.command(help="Mark Python/HTML strings for internationalization")
-@click.option("--target-path", "-t", type=click.Path(exists=True), required=True, help="Project directory to mark")
-@click.option(
-    "--dry-run",
-    is_flag=True,
-    default=False,
-    help="Preview changes without writing files",
-)
-@click.option(
-    "--check",
-    "check_only",
-    is_flag=True,
-    default=False,
-    help="CI mode: exit 1 if unmarked strings remain (no write)",
-)
-def marker(target_path: str, dry_run: bool, check_only: bool) -> None:
+@click.option("--target-path", "-t", type=click.Path(exists=True), required=True)
+@click.option("--dry-run", is_flag=True, default=False, help="Preview without writing")
+@click.option("--check", "check_only", is_flag=True, default=False, help="CI: exit 1 if pending marks")
+@click.option("--workers", "-j", type=int, default=None, help="Parallel workers (override config)")
+@click.pass_context
+def marker(ctx: click.Context, target_path: str, dry_run: bool, check_only: bool, workers: int | None) -> None:
+    _maybe_validate(ctx.obj["no_validate"], ctx.obj["config_path"])
+    if workers is not None and workers >= 1:
+        util = get_config_util()
+        marker_cfg = util._config.setdefault("marker", {})
+        if not isinstance(marker_cfg, dict):
+            util._config["marker"] = {"workers": workers}
+        else:
+            marker_cfg["workers"] = workers
+
     result = MarkerTool(target_path=target_path).handle(dry_run=dry_run, check_only=check_only)
     if check_only and result.has_pending:
         Prompt.error(
@@ -80,26 +111,19 @@ def marker(target_path: str, dry_run: bool, check_only: bool) -> None:
 
 
 @cli.command(help="Translate untranslated PO entries")
-@click.option(
-    "--locale-path",
-    "-p",
-    type=click.Path(exists=True),
-    required=True,
-    help="Locale directory or django.po path",
-)
-@click.option("--official-dict-path", "-o", type=str, required=False, help="Official dict JSON path")
+@click.option("--locale-path", "-p", type=click.Path(exists=True), required=True)
+@click.option("--official-dict-path", "-o", type=str, required=False)
 @click.option(
     "--mode",
     "-m",
     type=click.Choice(["update", "overwrite", "full_match"], case_sensitive=False),
-    required=False,
     default="update",
-    help="Translation mode",
 )
-def translator(locale_path: str, official_dict_path: str | None, mode: str) -> None:
+@click.pass_context
+def translator(ctx: click.Context, locale_path: str, official_dict_path: str | None, mode: str) -> None:
     from jinx.common.constants import TranslatorProviderEnum
-    from jinx.common.config import config_util
 
+    _maybe_validate(ctx.obj["no_validate"], ctx.obj["config_path"])
     provider = config_util.get("translator.provider", TranslatorProviderEnum.GoogleAPI.value)
     if provider == TranslatorProviderEnum.YoudaoClient.value:
         validate_config(require_youdao_secrets=True)
@@ -107,41 +131,39 @@ def translator(locale_path: str, official_dict_path: str | None, mode: str) -> N
 
 
 @cli.command(help="Extract i18n candidates into a PO file")
-@click.option("--target-path", "-t", type=click.Path(exists=True), required=True, help="Project directory")
-@click.option(
-    "--locale-path",
-    "-l",
-    type=click.Path(exists=True),
-    required=True,
-    help="Locale directory or django.po path",
-)
-def extractor(target_path: str, locale_path: str) -> None:
+@click.option("--target-path", "-t", type=click.Path(exists=True), required=True)
+@click.option("--locale-path", "-l", type=click.Path(exists=True), required=True)
+@click.pass_context
+def extractor(ctx: click.Context, target_path: str, locale_path: str) -> None:
+    _maybe_validate(ctx.obj["no_validate"], ctx.obj["config_path"])
     ExtractTool(target_path=target_path, locale_path=locale_path).handle()
 
 
 @cli.command(help="Export PO entries to JSON")
-@click.option(
-    "--locale-path",
-    "-l",
-    type=click.Path(exists=True),
-    required=True,
-    help="Locale directory or django.po path",
-)
-@click.option("--export-path", "-e", type=str, required=False, default="contents.json", help="Output JSON path")
-def exporter(locale_path: str, export_path: str) -> None:
+@click.option("--locale-path", "-l", type=click.Path(exists=True), required=True)
+@click.option("--export-path", "-e", type=str, default="contents.json")
+@click.pass_context
+def exporter(ctx: click.Context, locale_path: str, export_path: str) -> None:
+    _maybe_validate(ctx.obj["no_validate"], ctx.obj["config_path"])
     ExportTool(locale_path=locale_path, export_path=export_path).handle()
 
 
 @cli.command(help="Compile PO to MO")
-@click.option(
-    "--locale-path",
-    "-l",
-    type=click.Path(exists=True),
-    required=True,
-    help="Locale directory or django.po path",
-)
-def compiler(locale_path: str) -> None:
+@click.option("--locale-path", "-l", type=click.Path(exists=True), required=True)
+@click.pass_context
+def compiler(ctx: click.Context, locale_path: str) -> None:
+    _maybe_validate(ctx.obj["no_validate"], ctx.obj["config_path"])
     CompileTool(locale_path=locale_path).handle()
+
+
+@cli.command("plural-snippet", help="Print a ngettext_lazy snippet for manual plural i18n")
+@click.option("--singular", "-s", required=True, help="Singular template, e.g. '{count} item'")
+@click.option("--plural", "-p", required=True, help="Plural template, e.g. '{count} items'")
+@click.option("--count", "count_expr", default="count", show_default=True)
+def plural_snippet_cmd(singular: str, plural: str, count_expr: str) -> None:
+    from jinx.marker.plural_hints import ngettext_snippet
+
+    click.echo(ngettext_snippet(singular, plural, count_expr))
 
 
 def main() -> None:
