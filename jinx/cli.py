@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 
 import click
 
 from jinx.common.config import init_config
+from jinx.common.prompt import Prompt
+from jinx.common.validate import validate_config
 from jinx.compiler import CompileTool
 from jinx.exporter import ExportTool
 from jinx.extractor import ExtractTool
@@ -32,20 +35,48 @@ def _default_config_path() -> str:
     help="Path to jinx.toml",
     default=None,
 )
+@click.option("--no-validate", is_flag=True, default=False, help="Skip config validation")
 @click.pass_context
-def cli(ctx: click.Context, config_path: str | None) -> None:
+def cli(ctx: click.Context, config_path: str | None, no_validate: bool) -> None:
     path = config_path or os.environ.get("CONFIG_PATH") or _default_config_path()
     os.environ["CONFIG_PATH"] = path
-    os.environ.setdefault("BASE_DIR", str(Path(path).resolve().parent if Path(path).exists() else Path.cwd()))
+    os.environ.setdefault(
+        "BASE_DIR",
+        str(Path(path).resolve().parent if Path(path).exists() else Path.cwd()),
+    )
     init_config(path if Path(path).is_file() else None)
+    if not no_validate:
+        validate_config()
     ctx.ensure_object(dict)
     ctx.obj["config_path"] = path
 
 
-@cli.command(help="Mark Python strings for internationalization")
+@cli.command(help="Mark Python/HTML strings for internationalization")
 @click.option("--target-path", "-t", type=click.Path(exists=True), required=True, help="Project directory to mark")
-def marker(target_path: str) -> None:
-    MarkerTool(target_path=target_path).handle()
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    default=False,
+    help="Preview changes without writing files",
+)
+@click.option(
+    "--check",
+    "check_only",
+    is_flag=True,
+    default=False,
+    help="CI mode: exit 1 if unmarked strings remain (no write)",
+)
+def marker(target_path: str, dry_run: bool, check_only: bool) -> None:
+    result = MarkerTool(target_path=target_path).handle(dry_run=dry_run, check_only=check_only)
+    if check_only and result.has_pending:
+        Prompt.error(
+            "Check failed: {n} string(s) need marking across {f} file(s)",
+            n=result.token_count,
+            f=result.files_would_change,
+        )
+        sys.exit(1)
+    if check_only:
+        Prompt.info("Check passed: no pending i18n marks")
 
 
 @cli.command(help="Translate untranslated PO entries")
@@ -66,6 +97,12 @@ def marker(target_path: str) -> None:
     help="Translation mode",
 )
 def translator(locale_path: str, official_dict_path: str | None, mode: str) -> None:
+    from jinx.common.constants import TranslatorProviderEnum
+    from jinx.common.config import config_util
+
+    provider = config_util.get("translator.provider", TranslatorProviderEnum.GoogleAPI.value)
+    if provider == TranslatorProviderEnum.YoudaoClient.value:
+        validate_config(require_youdao_secrets=True)
     TranslatorTool(locale_path=locale_path, official_dict_path=official_dict_path, mode=mode.lower()).handle()
 
 

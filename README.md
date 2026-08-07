@@ -65,6 +65,17 @@ Uses an **AST + span edit** pipeline (UTF-8-accurate) to wrap matching string co
 
 Always review the diff after marking.
 
+### Marker safety modes
+
+```bash
+# preview only
+jinx marker -t ./myproject --dry-run
+
+# CI: fail if unmarked Chinese strings remain
+jinx marker -t ./myproject --check
+```
+
+
 ### 2. Extract
 
 **Plan A — Jinx extractor** (based on marker scan):

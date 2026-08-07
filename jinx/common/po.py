@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import json
 import shutil
-from typing import Any
+from pathlib import Path
 
 import arrow
 import polib
 
+from jinx.common.config import config_util
 from jinx.common.constants import PoFileModeEnum
 from jinx.common.path import check_exist
 from jinx.common.prompt import Prompt
@@ -16,14 +17,14 @@ from jinx.common.utils import strip_string_literal
 
 
 class PoUtil:
-    """Read / write gettext PO files with backup."""
+    """Read / write gettext PO files with optional backup."""
 
     def __init__(self, po_file_path: str) -> None:
         check_exist(po_file_path)
         self.po_file_path = po_file_path
         try:
             self._po = polib.pofile(po_file_path)
-        except Exception as e:  # noqa: BLE001 — surface as panic
+        except Exception as e:  # noqa: BLE001
             Prompt.panic("Failed to load {po_file_path}: {e}", po_file_path=po_file_path, e=e)
         self.po_content_list: list[polib.POEntry] = list(self._po)
         self.po_content_dict: dict[str, str] = {entry.msgid: entry.msgstr for entry in self._po}
@@ -32,10 +33,30 @@ class PoUtil:
     def po(self) -> polib.POFile:
         return self._po
 
-    def _backup(self) -> None:
+    def _backup_enabled(self) -> bool:
+        return bool(config_util.get("po.backup", True))
+
+    def _backup(self) -> str | None:
+        if not self._backup_enabled():
+            return None
         current = arrow.now().format("YYYY-MM-DDTHH-mm-ss")
         backup_file = f"{self.po_file_path}_bak_{current}"
         shutil.copyfile(self.po_file_path, backup_file)
+        # prune old backups if max set
+        max_keep = config_util.get("po.backup_keep", 5)
+        if isinstance(max_keep, int) and max_keep >= 0:
+            self._prune_backups(max_keep)
+        return backup_file
+
+    def _prune_backups(self, keep: int) -> None:
+        path = Path(self.po_file_path)
+        pattern = f"{path.name}_bak_*"
+        backups = sorted(path.parent.glob(pattern), key=lambda p: p.stat().st_mtime, reverse=True)
+        for old in backups[keep:]:
+            try:
+                old.unlink()
+            except OSError:
+                pass
 
     @property
     def msgid_list(self) -> list[str]:
@@ -47,14 +68,13 @@ class PoUtil:
 
     @staticmethod
     def _normalize_msgid_map(data: dict[str, str]) -> dict[str, str]:
-        normalized: dict[str, str] = {}
-        for key, value in data.items():
-            normalized[strip_string_literal(key)] = value
-        return normalized
+        return {strip_string_literal(key): value for key, value in data.items()}
 
     def write(self, data: dict[str, str], mode: str = PoFileModeEnum.UPDATE.value) -> None:
-        """Write translation entries into the PO file."""
-        self._backup()
+        bak = self._backup()
+        if bak:
+            Prompt.info("PO backup: {bak}", bak=bak)
+
         if mode == PoFileModeEnum.OVERWRITE.value:
             for entry in self._po:
                 if entry.msgid in data:
@@ -74,7 +94,6 @@ class PoUtil:
             self._po.save()
             return
 
-        # UPDATE: only fill empty msgstr
         for entry in self._po:
             if entry.msgid in data and not entry.msgstr:
                 entry.msgstr = data[entry.msgid]
