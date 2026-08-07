@@ -1,28 +1,83 @@
-.git
-.vscode
-.idea
+# --- IDE / OS ---
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
 
-# 配置文件
-jinx.toml
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+*.manifest
+*.spec
 
-# mypy检查生成的cache
-.mypy_cache
+# Virtualenvs
+.venv/
+venv/
+ENV/
+env/
 
-# codecc检查生成的cache
-.codecc
+# Packaging / build
+build/
+dist/
+wheels/
+*.whl
+*.tar.gz
+!docs/**/*.tar.gz
 
-# 构建生成的文件
-build
-dist
-
-# virtualenv
-.venv
+# Test / type / lint caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+.hypothesis/
 .coverage
-htmlcov
-*.egg-info
-.pytest_cache
+.coverage.*
+coverage.xml
+htmlcov/
+.cache/
+.pytype/
+.pyre/
 
+# Codecc / other local tooling
+.codecc/
 
+# --- Secrets & local machine config ---
+# Only ignore the repo-root runtime config; keep demo_django_project/jinx.toml trackable
+/jinx.toml
+.env
+.env.*
+!.env.example
+
+# --- Jinx runtime artifacts ---
+# PO backups written by PoUtil
 *_bak_*
-demo_django_project/locale/**/*.mo
-demo_django_project/contents.json
+*.po_bak_*
+
+# Compiled gettext catalogs (generated)
+*.mo
+
+# Exporter default / demo outputs
+contents.json
+**/contents.json
+
+# SQLite if someone runs the demo app
+*.sqlite3
+db.sqlite3
+
+# Official dict filled with real secrets (template stays tracked)
+# official_dict.json is OK in demo as sample data
+
+# --- Optional local logs ---
+*.log
+logs/
