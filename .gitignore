@@ -14,3 +14,11 @@ jinx.toml
 # 构建生成的文件
 build
 dist
+
+# virtualenv
+.venv
+.coverage
+htmlcov
+*.egg-info
+.pytest_cache
+
