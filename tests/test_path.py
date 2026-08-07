@@ -1,8 +1,12 @@
 """Path helper tests."""
 
+from __future__ import annotations
+
 from pathlib import Path
 
-from jinx.common.path import resolve_po_path
+import pytest
+
+from jinx.common.path import check_exist, resolve_po_path
 
 
 def test_resolve_po_file_direct(tmp_path: Path) -> None:
@@ -16,3 +20,14 @@ def test_resolve_locale_dir(tmp_path: Path) -> None:
     po.parent.mkdir(parents=True)
     po.write_text('msgid ""\nmsgstr ""\n', encoding="utf-8")
     assert resolve_po_path(str(tmp_path), dest_lang="en") == str(po)
+
+
+def test_check_exist_ok(tmp_path: Path) -> None:
+    f = tmp_path / "x"
+    f.write_text("1", encoding="utf-8")
+    check_exist(str(f))
+
+
+def test_check_exist_missing(tmp_path: Path) -> None:
+    with pytest.raises(SystemExit):
+        check_exist(str(tmp_path / "nope"))
