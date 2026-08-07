@@ -1,15 +1,13 @@
-"""Convert f-strings into gettext + str.format / format() using pure AST.
+"""Convert f-strings into gettext + str.format using pure AST.
 
-AST can fully desugar f-strings. gettext only needs a **static msgid**; any
-dynamic piece becomes a ``.format`` / ``format()`` argument.
+Industry consensus (Django docs, Ruff INT001, gettext community):
 
-Examples::
+* **Bad:**  ``_(f"Welcome {name}")``  — f-string expands *before* lookup
+* **Good:** ``_("Welcome {name}").format(name=name)``
+* **Good:** ``_("Welcome %(name)s") % {"name": name}``
 
-    f"你好{name}"           → _("你好{}").format(name)
-    f"共{n:02d}件"          → _("共{:02d}件").format(n)
-    f"值{x!r}"              → _("值{!r}").format(x)
-    f"数{n:{w}}"            → _("数{}").format(format(n, "{}".format(w)))
-    f"外{f\'内{x}\'}"       → _("外{}").format(_("内{}").format(x))
+We desugar f-strings to the Django-recommended ``_.format(name=...)`` form
+so msgid stays a static template and translators can reorder placeholders.
 """
 
 from __future__ import annotations
@@ -40,13 +38,19 @@ def _const_str(value: str) -> ast.Constant:
     return ast.Constant(value=value)
 
 
-def _call_format_method(template: ast.expr, args: list[ast.expr]) -> ast.expr:
-    if not args:
+def _call_format_method(
+    template: ast.expr,
+    args: list[ast.expr] | None = None,
+    keywords: list[ast.keyword] | None = None,
+) -> ast.expr:
+    args = args or []
+    keywords = keywords or []
+    if not args and not keywords:
         return template
     return ast.Call(
         func=ast.Attribute(value=template, attr="format", ctx=ast.Load()),
         args=args,
-        keywords=[],
+        keywords=keywords,
     )
 
 
@@ -59,7 +63,6 @@ def _call_builtin_format(value: ast.expr, spec: ast.expr) -> ast.expr:
 
 
 def _apply_conversion(value: ast.expr, conversion: int) -> ast.expr:
-    """Map f-string !s / !r / !a to str/repr/ascii calls."""
     if conversion == -1:
         return value
     func = {ord("s"): "str", ord("r"): "repr", ord("a"): "ascii"}.get(conversion)
@@ -69,7 +72,6 @@ def _apply_conversion(value: ast.expr, conversion: int) -> ast.expr:
 
 
 def _static_joined_text(node: ast.JoinedStr) -> str | None:
-    """If JoinedStr is only string constants, return the concatenated text."""
     parts: list[str] = []
     for value in node.values:
         if isinstance(value, ast.Constant) and isinstance(value.value, str):
@@ -80,7 +82,7 @@ def _static_joined_text(node: ast.JoinedStr) -> str | None:
 
 
 def joined_str_to_expr(node: ast.JoinedStr) -> ast.expr:
-    """Desugar an f-string to a non-f-string expression **without** gettext."""
+    """Desugar f-string without gettext (for format_spec / nested non-i18n)."""
     static = _static_joined_text(node)
     if static is not None:
         return _const_str(static)
@@ -97,36 +99,27 @@ def joined_str_to_expr(node: ast.JoinedStr) -> ast.expr:
             continue
         raise ValueError(f"unsupported f-string part: {type(value).__name__}")
 
-    template = _const_str("".join(fmt_parts))
-    return _call_format_method(template, args)
+    return _call_format_method(_const_str("".join(fmt_parts)), args=args)
 
 
 def formatted_value_to_expr(node: ast.FormattedValue, alias_name: str | None = None) -> ast.expr:
-    """Desugar one ``{expr!c:spec}`` slot to a plain expression."""
     value: ast.expr = node.value
     if isinstance(value, ast.JoinedStr):
         value = _nested_joined(value, alias_name)
-
     value = _apply_conversion(value, node.conversion)
-
     if node.format_spec is None:
         return value
-
     if isinstance(node.format_spec, ast.JoinedStr):
         static = _static_joined_text(node.format_spec)
         if static is not None:
             return _call_builtin_format(value, _const_str(static))
-        spec_expr = joined_str_to_expr(node.format_spec)
-        return _call_builtin_format(value, spec_expr)
-
+        return _call_builtin_format(value, joined_str_to_expr(node.format_spec))
     if isinstance(node.format_spec, ast.Constant) and isinstance(node.format_spec.value, str):
         return _call_builtin_format(value, _const_str(node.format_spec.value))
-
     return _call_builtin_format(value, node.format_spec)
 
 
 def _nested_joined(node: ast.JoinedStr, alias_name: str | None) -> ast.expr:
-    """Desugar nested f-string; wrap with gettext when it carries target-language text."""
     if alias_name:
         result = convert_joined_str(node, alias_name)
         if result.ok and result.node is not None and _TARGET_LANG_HINT.search(result.msgid or ""):
@@ -134,8 +127,28 @@ def _nested_joined(node: ast.JoinedStr, alias_name: str | None) -> ast.expr:
     return joined_str_to_expr(node)
 
 
-def _placeholder_for_static_spec(conversion: int, static_spec: str) -> str:
-    inner = ""
+def _unique_key(base: str, used: set[str]) -> str:
+    if base not in used:
+        used.add(base)
+        return base
+    i = 2
+    while f"{base}_{i}" in used:
+        i += 1
+    key = f"{base}_{i}"
+    used.add(key)
+    return key
+
+
+def _slot_key(expr: ast.expr, used: set[str], auto_i: list[int]) -> str:
+    """Prefer variable name for Django-style named placeholders."""
+    if isinstance(expr, ast.Name) and expr.id.isidentifier() and not expr.id.startswith("__"):
+        return _unique_key(expr.id, used)
+    auto_i[0] += 1
+    return _unique_key(f"v{auto_i[0]}", used)
+
+
+def _placeholder(key: str, conversion: int, static_spec: str) -> str:
+    inner = key
     if conversion != -1:
         inner += "!" + chr(conversion)
     if static_spec:
@@ -145,13 +158,15 @@ def _placeholder_for_static_spec(conversion: int, static_spec: str) -> str:
 
 def convert_joined_str(node: ast.JoinedStr, alias_name: str) -> FStringConvertResult:
     """
-    Convert ``f"…"`` into ``_(msgid).format(...)`` using AST only.
+    Convert ``f"…"`` into ``_(msgid).format(name=...)`` (Django-recommended).
 
-    Dynamic pieces become ``.format`` / ``format()`` arguments so the msgid stays static.
+    Named placeholders allow translators to reorder words; msgid stays static.
     """
     try:
         fmt_parts: list[str] = []
-        args: list[ast.expr] = []
+        keywords: list[ast.keyword] = []
+        used: set[str] = set()
+        auto_i = [0]
 
         for value in node.values:
             if isinstance(value, ast.Constant) and isinstance(value.value, str):
@@ -170,11 +185,21 @@ def convert_joined_str(node: ast.JoinedStr, alias_name: str) -> FStringConvertRe
                     static_spec = value.format_spec.value
 
                 if static_spec is not None and not isinstance(value.value, ast.JoinedStr):
-                    fmt_parts.append(_placeholder_for_static_spec(value.conversion, static_spec))
-                    args.append(value.value)
+                    # Static conversion/spec kept in msgid (translator-visible)
+                    key = _slot_key(value.value, used, auto_i)
+                    fmt_parts.append(_placeholder(key, value.conversion, static_spec))
+                    keywords.append(ast.keyword(arg=key, value=value.value))
                 else:
-                    fmt_parts.append("{}")
-                    args.append(formatted_value_to_expr(value, alias_name=alias_name))
+                    # Dynamic / nested → fold to one named arg with precomputed value
+                    key = _unique_key(f"v{auto_i[0] + 1}", used)
+                    auto_i[0] += 1
+                    fmt_parts.append("{" + key + "}")
+                    keywords.append(
+                        ast.keyword(
+                            arg=key,
+                            value=formatted_value_to_expr(value, alias_name=alias_name),
+                        )
+                    )
                 continue
 
             return FStringConvertResult(
@@ -188,7 +213,7 @@ def convert_joined_str(node: ast.JoinedStr, alias_name: str) -> FStringConvertRe
             args=[_const_str(msgid)],
             keywords=[],
         )
-        node_out: ast.AST = _call_format_method(gettext_call, args)
+        node_out: ast.AST = _call_format_method(gettext_call, keywords=keywords)
         return FStringConvertResult(ok=True, node=node_out, msgid=msgid)
     except Exception as exc:  # noqa: BLE001
         return FStringConvertResult(ok=False, reason=str(exc))
