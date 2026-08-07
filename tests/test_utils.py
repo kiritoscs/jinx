@@ -8,10 +8,12 @@ from pathlib import Path
 import pytest
 
 from jinx.common.utils import (
+    apply_span_replacements,
     array_chunk,
     import_string,
     is_sub_string,
     list_files,
+    path_matches_patterns,
     read_file,
     strip_string_literal,
     write_file,
@@ -30,6 +32,19 @@ def test_is_sub_string() -> None:
     assert not is_sub_string("/a/b", None)
 
 
+def test_path_matches_segment_not_substring() -> None:
+    assert path_matches_patterns("/proj/migrations/0001.py", ["migrations"])
+    assert not path_matches_patterns("/proj/mymigrations/x.py", ["migrations"])
+    assert path_matches_patterns("tests.py", ["tests.py"])
+    assert path_matches_patterns("/a/b/tests.py", ["tests.py"])
+    assert path_matches_patterns("/a/shop/tests/test_x.py", ["**/tests/**", "tests"])
+
+
+def test_path_matches_glob() -> None:
+    assert path_matches_patterns("/a/foo.pyc", ["*.pyc"])
+    assert path_matches_patterns("/a/static/js/app.js", ["**/static/**"])
+
+
 def test_list_files_filters(tmp_path: Path) -> None:
     (tmp_path / "keep.py").write_text("x=1\n", encoding="utf-8")
     (tmp_path / "skip.txt").write_text("x", encoding="utf-8")
@@ -46,10 +61,25 @@ def test_list_files_filters(tmp_path: Path) -> None:
     assert "skip.txt" not in names
 
 
+def test_list_files_html_suffix(tmp_path: Path) -> None:
+    (tmp_path / "a.html").write_text("<p>x</p>", encoding="utf-8")
+    (tmp_path / "b.py").write_text("x=1\n", encoding="utf-8")
+    files = list_files(str(tmp_path), suffixes=(".html",))
+    assert len(files) == 1
+    assert files[0].endswith("a.html")
+
+
 def test_list_files_single_file(tmp_path: Path) -> None:
     f = tmp_path / "one.py"
     f.write_text("x=1\n", encoding="utf-8")
     assert list_files(str(f)) == [str(f)]
+
+
+def test_apply_span_replacements() -> None:
+    src = "aaa bbb ccc"
+    # replace bbb -> XXX
+    out = apply_span_replacements(src, [(4, 7, "XXX")])
+    assert out == "aaa XXX ccc"
 
 
 def test_read_write_text(tmp_path: Path) -> None:

@@ -56,11 +56,12 @@ CLI flag `-c /path/to/jinx.toml` overrides discovery. If no config file exists, 
 jinx marker -t ${YOUR_DJANGO_PROJECT_DIR}
 ```
 
-Uses an **AST** transformer to wrap matching string constants (default language: Chinese) with `gettext_lazy as _` (configurable), and inserts the Django import when missing.
+Uses an **AST + span edit** pipeline (UTF-8-accurate) to wrap matching string constants with `gettext_lazy as _` (configurable), insert the Django import when missing, and **preserve original formatting/comments**.
 
-- Skips strings already inside gettext calls
-- Skips docstrings
-- Reports f-strings that contain target-language text (unsupported for auto-wrap); with `strict_mode = true` the whole file is skipped when any are found
+- Skips strings already inside gettext calls and docstrings
+- Converts common f-strings: `f"你好{name}"` → `_("你好{}").format(name)` (`marker.convert_fstring`)
+- Unsupported f-strings (e.g. dynamic format specs) are left unchanged and warned; `strict_mode` skips the whole file if any remain
+- Optionally marks Django HTML templates (`suffixes` includes `.html`) with `{% trans "…" %}`
 
 Always review the diff after marking.
 
