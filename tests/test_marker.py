@@ -22,7 +22,7 @@ def test_preserves_comments_and_spacing(clean_config, tmp_path: Path) -> None:
     src = tmp_path / "sample.py"
     src.write_text(
         "# header comment\n"
-        "msg = \"你好\"  # trailing\n"
+        'msg = "你好"  # trailing\n'
         "\n"
         "value = 1\n",
         encoding="utf-8",
@@ -70,31 +70,34 @@ def test_fstring_converted_to_format(clean_config, tmp_path: Path) -> None:
     assert not handler.illegal_tokens
     content = src.read_text(encoding="utf-8")
     assert "format" in content
-    assert "你好{}" in content or "你好" in content
-    assert "f\"" not in content or "f'" not in content or "msg =" in content
-    assert "f\"你好" not in content
+    assert "你好{}" in content
+    assert 'f"你好' not in content
 
 
 def test_fstring_with_format_spec(clean_config, tmp_path: Path) -> None:
     src = tmp_path / "sample.py"
-    src.write_text("n = 3\nmsg = f\"共{n:02d}件商品\"\n", encoding="utf-8")
+    src.write_text('n = 3\nmsg = f"共{n:02d}件商品"\n', encoding="utf-8")
     FileMarker(str(src)).handle()
     content = src.read_text(encoding="utf-8")
     assert "02d" in content
-    assert ".format(n)" in content or ".format(" in content
+    assert ".format(" in content
+    assert 'f"共' not in content
 
 
-def test_unsupported_fstring_left_unchanged(clean_config, tmp_path: Path) -> None:
+def test_dynamic_fstring_converted(clean_config, tmp_path: Path) -> None:
+    """Dynamic format_spec must be converted via AST, not left as f-string."""
     src = tmp_path / "sample.py"
-    # dynamic format spec cannot be converted safely
     src.write_text('w = "02d"\nmsg = f"数量{1:{w}}"\n', encoding="utf-8")
     handler = FileMarker(str(src))
     handler.handle()
-    assert handler.illegal_tokens
-    assert "f\"数量" in src.read_text(encoding="utf-8") or "f'数量" in src.read_text(encoding="utf-8")
+    assert not handler.illegal_tokens
+    content = src.read_text(encoding="utf-8")
+    assert "数量{}" in content or "数量" in content
+    assert 'f"数量' not in content
+    assert "format" in content
 
 
-def test_strict_mode_skips_when_unsupported_fstring(clean_config, tmp_path: Path) -> None:
+def test_strict_mode_with_convertible_fstring_still_writes(clean_config, tmp_path: Path) -> None:
     cfg = tmp_path / "jinx.toml"
     cfg.write_text(
         "[marker]\nstrict_mode = true\nconvert_fstring = true\n",
@@ -102,10 +105,11 @@ def test_strict_mode_skips_when_unsupported_fstring(clean_config, tmp_path: Path
     )
     init_config(cfg)
     src = tmp_path / "sample.py"
-    original = 'w = "x"\nx = "你好"\ny = f"数{1:{w}}"\n'
-    src.write_text(original, encoding="utf-8")
+    src.write_text('x = "你好"\ny = f"你好{x}"\n', encoding="utf-8")
     FileMarker(str(src)).handle()
-    assert src.read_text(encoding="utf-8") == original
+    content = src.read_text(encoding="utf-8")
+    assert "_(" in content
+    assert 'f"你好' not in content
 
 
 def test_only_extract_tokens_does_not_write(clean_config, tmp_path: Path) -> None:
