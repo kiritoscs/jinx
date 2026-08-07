@@ -1,0 +1,89 @@
+# Demo PO file for jinx walkthrough
+msgid ""
+msgstr ""
+"Language: en\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "商品名称"
+msgstr "Product name"
+
+msgid "价格"
+msgstr "Price"
+
+msgid "是否上架"
+msgstr "Published"
+
+msgid "商品描述"
+msgstr "Product description"
+
+msgid "商品"
+msgstr "Product"
+
+msgid "商品列表"
+msgstr "Products"
+
+msgid "已上架"
+msgstr "Published"
+
+msgid "已下架"
+msgstr "Unpublished"
+
+msgid "商店应用"
+msgstr "Shop App"
+
+msgid "销售价格"
+msgstr "Sale price"
+
+msgid "详细介绍"
+msgstr "Detailed description"
+
+msgid "立即上架"
+msgstr "Publish now"
+
+msgid "请输入不超过 100 个字符的名称"
+msgstr "Enter a name within 100 characters"
+
+msgid "单位为人民币元"
+msgstr "Amount in CNY"
+
+msgid "商品名称不能为空"
+msgstr "Product name is required"
+
+msgid "商品名称过长"
+msgstr "Product name is too long"
+
+msgid "价格不能为负数"
+msgstr "Price cannot be negative"
+
+msgid "批量上架所选商品"
+msgstr "Publish selected products"
+
+msgid "暂无上架商品，请稍后再来"
+msgstr "No products available, please come back later"
+
+msgid "精选商品列表"
+msgstr "Featured products"
+
+msgid "点击商品查看详情"
+msgstr "Click a product to view details"
+
+msgid "商品不存在或已删除"
+msgstr "Product not found or deleted"
+
+msgid "商品详情"
+msgstr "Product details"
+
+msgid "立即购买"
+msgstr "Buy now"
+
+msgid "返回列表"
+msgstr "Back to list"
+
+msgid "仅支持 POST 请求"
+msgstr "POST only"
+
+msgid "下单成功，感谢您的购买"
+msgstr "Order placed, thank you"
+
+msgid "请前往订单中心查看"
+msgstr "Please check your order center"

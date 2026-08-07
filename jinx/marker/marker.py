@@ -72,12 +72,13 @@ class _StringMarker(ast.NodeTransformer):
     def visit_Constant(self, node: ast.Constant) -> ast.AST:
         if not isinstance(node.value, str):
             return node
-        if self._in_translation_call > 0:
-            return node
         source_line = self._source_line(node)
         if not StrCondition(token_text=node.value, source_line=source_line).match():
             return node
         token = Token(type=tokenize.STRING, token=node.value, start_at=TokenPoint(row=_lineno(node), col=_col(node)), end_at=TokenPoint(row=_lineno(node), col=_col(node) + len(repr(node.value))), source_line=source_line)
+        if self._in_translation_call > 0:
+            self.tokens.append(token)
+            return node
         self.tokens.append(token)
         self.changed = True
         return ast.Call(func=ast.Name(id=self.alias_name, ctx=ast.Load()), args=[node], keywords=[])

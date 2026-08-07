@@ -35,3 +35,20 @@ def test_extract_to_locale_dir(clean_config, tmp_path: Path) -> None:
     ExtractTool(target_path=str(src_dir), locale_path=str(tmp_path)).handle()
     reloaded = polib.pofile(str(po_path))
     assert any(e.msgid == "测试词条" for e in reloaded)
+
+
+def test_extract_after_mark_collects_wrapped_strings(clean_config, tmp_path: Path) -> None:
+    """Regression: extractor must find msgids already wrapped by marker."""
+    src_dir = tmp_path / "app"
+    src_dir.mkdir()
+    src = src_dir / "views.py"
+    src.write_text('title = "欢迎光临"\n', encoding="utf-8")
+    po_path = write_po(tmp_path / "django.po", [])
+
+    from jinx.marker.marker import FileMarker
+    FileMarker(str(src)).handle()
+    assert "_(" in src.read_text(encoding="utf-8")
+
+    ExtractTool(target_path=str(src_dir), locale_path=str(po_path)).handle()
+    reloaded = polib.pofile(str(po_path))
+    assert any(e.msgid == "欢迎光临" for e in reloaded)

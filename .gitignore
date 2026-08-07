@@ -22,3 +22,7 @@ htmlcov
 *.egg-info
 .pytest_cache
 
+
+*_bak_*
+demo_django_project/locale/**/*.mo
+demo_django_project/contents.json
